@@ -1,0 +1,82 @@
+{
+  "brand": {
+    "name": "Self OS",
+    "tagline": "Seu sistema operacional pessoal"
+  },
+  "nav": {
+    "primaryLabel": "Navegação principal",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "chat": "Chat",
+    "chatSubtitle": "Registre e consulte suas finanças conversando",
+    "expenses": "Gastos",
+    "expensesSubtitle": "Tudo que saiu, por categoria e período",
+    "income": "Receitas",
+    "incomeSubtitle": "Tudo que entrou, por categoria e período",
+    "categories": "Categorias",
+    "categoriesSubtitle": "Sua hierarquia de categorias e subcategorias",
+    "log": "Log da IA",
+    "logSubtitle": "Chamadas, tokens e custo de cada mensagem"
+  },
+  "account": {
+    "menu": {
+      "label": "Menu do usuário",
+      "noName": "Minha conta",
+      "notSignedIn": "Não autenticado",
+      "myAccount": "Minha conta",
+      "signOut": "Sair"
+    }
+  },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema"
+  },
+  "language": {
+    "label": "Idioma",
+    "ptBR": "Português (Brasil)",
+    "en": "English"
+  },
+  "placeholder": {
+    "title": "Módulo ainda não implementado",
+    "description": "A estrutura desta tela já existe: página, pasta de componentes, camada de dados (supabase.ts). O conteúdo entra quando o módulo for detalhado.",
+    "nextSteps": "Próximos passos"
+  },
+  "chat": {
+    "placeholder": {
+      "step1": "Tabelas de conversa e de log da IA",
+      "step2": "Edge Function de chat com as ferramentas de gasto, receita e categoria",
+      "step3": "Bolhas, gravador de áudio e transcrição",
+      "step4": "Cartão de confirmação de registro salvo"
+    }
+  },
+  "expenses": {
+    "placeholder": {
+      "step1": "Tabela de gastos vinculada ao perfil, com RLS por dono",
+      "step2": "Lista com filtro por período e por categoria (incluindo subcategorias)",
+      "step3": "Criar, editar e excluir um gasto pela tela"
+    }
+  },
+  "income": {
+    "placeholder": {
+      "step1": "Tabela de receitas vinculada ao perfil, com RLS por dono",
+      "step2": "Lista com filtro por período e por categoria (incluindo subcategorias)",
+      "step3": "Criar, editar e excluir uma receita pela tela"
+    }
+  },
+  "categories": {
+    "placeholder": {
+      "step1": "Tabela de categorias com auto-relacionamento (categoria pai)",
+      "step2": "Consulta recursiva que soma a categoria e todos os descendentes",
+      "step3": "Árvore navegável para criar, renomear e mover categorias"
+    }
+  },
+  "log": {
+    "placeholder": {
+      "step1": "Tabela de log com origem (texto ou áudio), modelo, tokens e custo",
+      "step2": "Lista por data com o que a IA chamou em cada mensagem",
+      "step3": "Totais de consumo por período"
+    }
+  }
+}

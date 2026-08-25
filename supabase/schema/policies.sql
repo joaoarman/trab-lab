@@ -1,0 +1,5 @@
+-- =========================================================================
+-- policies.sql
+-- RLS + policies (escopo de acesso por projeto).
+-- Estado ATUAL do banco para esta entidade.
+-- =========================================================================

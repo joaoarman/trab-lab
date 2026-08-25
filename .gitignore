@@ -1,0 +1,24 @@
+# Arquivos que não entram no repositório.
+node_modules
+dist
+*.log
+.DS_Store
+.env
+.env.local
+.claude
+
+# Documentação de contexto do projeto.
+#
+# Nenhum CLAUDE.md entra: o padrão sem barra casa em QUALQUER nível, e esses
+# arquivos são material de trabalho — instruções para quem mexe no código, não
+# entrega. O que o repositório publica sobre o projeto é o README.md.
+CLAUDE.md
+
+# A exceção são os das pastas de commit, que resumem cada entrega ao lado do SQL
+# rodado e por isso fazem parte da entrega acadêmica. Reincluir funciona aqui
+# porque o que está ignorado é o ARQUIVO, não a pasta.
+!/commits/**/CLAUDE.md
+
+# Estado local do CLI do Supabase (ref do projeto, versões do servidor, URL do
+# pooler). É por máquina e é recriado pelo `supabase link` — não é do projeto.
+supabase/.temp

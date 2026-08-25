@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#0c1310" />
+    <!-- O nome do produto passa por i18n em todo lugar (brand.name); aqui não
+         alcança — o título do documento é lido antes do React existir. -->
+    <title>Self OS</title>
+    <script>
+      /*
+        Anti-flash do tema escuro.
+
+        Aplica a classe `.dark` no <html> ANTES do primeiro quadro. Sem isto o
+        navegador pinta a página com o tema claro e o React só troca depois de
+        montar: um clarão branco de um quadro, toda vez que o app abre no escuro.
+
+        Precisa ser inline e síncrono no <head> — um arquivo externo já chegaria
+        tarde demais. É a MESMA chave e a MESMA regra do ThemeContext.tsx
+        (src/shared/context/): mexeu lá, mexa aqui.
+      */
+      ;(function () {
+        try {
+          var salvo = localStorage.getItem('selfos.theme')
+          var escuro =
+            salvo === 'dark' ||
+            ((!salvo || salvo === 'system') &&
+              window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (escuro) document.documentElement.classList.add('dark')
+        } catch (e) {
+          /* Sem localStorage: abre no claro. */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

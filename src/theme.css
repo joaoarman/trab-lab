@@ -1,0 +1,201 @@
+/* =============================================================================
+   TEMA DO PROJETO — fonte ÚNICA da identidade visual.
+
+   Tudo que define a "cara" do sistema vive AQUI e só aqui, como CSS variables:
+   cores (claro + escuro), tipografia, raio de borda e o enquadramento do
+   conteúdo (largura máxima e padding). Para migrar a paleta, as fontes ou a
+   densidade do app inteiro, edite este arquivo — nada de valor hardcoded em
+   componente ou no tailwind.config.ts (lá só se MAPEIA a variável para um
+   utilitário; o valor mora aqui).
+
+   Como funciona:
+   • Cores: valores HSL crus ("H S% L%") consumidos como hsl(var(--token)) —
+     o mapeamento para utilitários (bg-primary, text-muted-foreground…) está
+     no tailwind.config.ts.
+   • Tipografia: as variáveis --font-* definem as famílias; os utilitários são
+     font-sans (corpo/UI), font-display (títulos/marca) e font-mono (números/dados).
+   • Enquadramento do conteúdo: --content-max-width e --content-padding definem
+     a largura máxima e o respiro da área de conteúdo. O layout aplica via
+     max-w-content / px-content. Trocou aqui, o app inteiro se ajusta.
+     --bottom-nav-height completa o enquadramento por baixo, no mobile: é a
+     altura da barra de navegação inferior, lida por ela E pelo espaço que o
+     <main> reserva embaixo — os dois precisam concordar, então é um token só.
+   • Tema claro em :root; tema escuro em .dark (classe no <html>, via toggle).
+
+   -----------------------------------------------------------------------------
+   IDENTIDADE — "SALDO" (esmeralda sobre neutros quentes)
+
+   O verde é a cor do dinheiro que sobra, e aqui ele é a marca: navegação ativa,
+   ação principal, confirmação de registro salvo no chat. Os neutros são quentes
+   (areia no claro, grafite quente no escuro) para o chat não parecer um painel
+   frio — a conversa é o coração do sistema.
+
+     Marca      esmeralda (--primary)  → navegação ativa, ação principal, marca
+     Receita    verde-grama (--income) → entrada de dinheiro
+     Gasto      coral (--expense)      → saída de dinheiro
+     Neutros    areia quente (claro) / grafite quente (escuro)
+     Gráficos   --chart-1..5: esmeralda · céu · âmbar · violeta · rosa
+     Fontes     Outfit (display) · Inter (UI) · JetBrains Mono (valores em R$)
+     Forma      raio 14px  ·  Densidade  80rem de conteúdo, 24px de respiro
+
+   ## Por que --income e --expense existem, separados de --primary
+
+   Num sistema financeiro, "positivo" e "negativo" são um par de cores com
+   SIGNIFICADO, e ele aparece em todo lugar: no valor do gasto salvo no chat, na
+   linha do extrato, no total do mês, no gráfico por categoria. Se cada tela
+   escolher o próprio verde e o próprio vermelho, o par sai de sintonia — e é
+   exatamente o par que o usuário lê primeiro, antes do número.
+
+   Eles NÃO são --primary e --destructive:
+   • --primary é a MARCA (o que é clicável, o que está ativo). Um extrato cheio
+     de receitas não deveria parecer cheio de botões.
+   • --destructive é PERIGO (apagar, ação irreversível). Um gasto de R$ 20 no
+     posto não é um erro nem um alerta — é o dia normal de quem controla o
+     dinheiro. Pintá-lo com a cor de "excluir" faria o app repreender o usuário
+     a cada registro.
+   ========================================================================== */
+
+/* Fontes self-hosted: nada de chamada externa, e continuam funcionando offline
+   se um dia o sistema virar PWA. */
+@import '@fontsource-variable/outfit';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
+
+:root {
+  /* ---- Tipografia ---- */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: 'Outfit Variable', var(--font-sans);
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- Forma ---- */
+  --radius: 0.875rem;
+
+  /* ---- Widgets NATIVOS do navegador ---- */
+  /* Diz ao navegador em que tema ele deve desenhar o que não é nosso: o ícone
+     de calendário do <input type="date">, o de relógio do type="time", a barra
+     de rolagem, o seletor de cor. Sem isto o Chrome os pinta em PRETO mesmo no
+     tema escuro, e eles somem no fundo. Os filtros de período de Gastos e
+     Receitas vivem de <input type="date">, então isto não é detalhe aqui. */
+  color-scheme: light;
+
+  /* ---- Enquadramento do conteúdo (shell/SPA) ---- */
+  /* Largura máxima da área de conteúdo (o miolo entre sidebar/header). */
+  --content-max-width: 80rem; /* 1280px */
+  /* Respiro (padding) padrão em torno do conteúdo. */
+  --content-padding: 1.5rem; /* 24px */
+  /* Altura da barra de navegação inferior (só no mobile), SEM a área segura do
+     aparelho — quem a soma é quem usa o token.
+
+     Ela é lida em dois lugares que precisam concordar: a própria barra (que se
+     mede por ela) e o espaço que o <main> reserva embaixo para não passar por
+     baixo dela. Dois números escritos à mão divergem, e o vão morto aparece
+     justamente embaixo do campo de escrever do chat, onde o compositor encosta
+     na barra.
+
+     4.3125rem = 8px (py-2) + 32px (a pílula do ícone) + 4px (gap-1) + 16px (o
+     rótulo em text-xs) + 8px (py-2) + 1px (a borda de cima). Mexeu no desenho
+     da barra, ajuste aqui. */
+  --bottom-nav-height: 4.3125rem; /* 69px */
+
+  /* ---- Cores — tema CLARO (HSL cru "H S% L%") ---- */
+  /* Neutros quentes (fundo areia, superfícies brancas, texto grafite quente) */
+  --background: 40 30% 98%;
+  --foreground: 24 10% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 24 10% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 24 10% 12%;
+  --secondary: 40 16% 95%;
+  --secondary-foreground: 24 10% 18%;
+  --muted: 40 16% 95%;
+  --muted-foreground: 25 6% 42%;
+  --border: 38 14% 89%;
+  --input: 38 14% 89%;
+
+  /* Marca / ação — esmeralda */
+  --primary: 162 84% 27%;
+  --primary-foreground: 0 0% 100%;
+  /* Fundo suave da marca (item ativo da navegação, chips, realces discretos) */
+  --primary-muted: 160 45% 94%;
+  --primary-muted-foreground: 162 84% 22%;
+  /* Neutro de interação (hover de item de menu, dropdown, botão fantasma).
+     Propositalmente DISCRETO: quem chama atenção é --primary. */
+  --accent: 40 20% 94%;
+  --accent-foreground: 24 10% 18%;
+  --ring: 162 84% 30%;
+
+  /* Dinheiro que ENTRA — verde-grama, mais claro e mais amarelo que a marca,
+     para os dois não se confundirem quando aparecem na mesma tela. */
+  --income: 142 68% 32%;
+  --income-foreground: 0 0% 100%;
+  --income-muted: 142 50% 94%;
+
+  /* Dinheiro que SAI — coral. Vermelho de LEITURA, não de alerta: veja a nota
+     no cabeçalho sobre por que não é --destructive. */
+  --expense: 8 72% 46%;
+  --expense-foreground: 0 0% 100%;
+  --expense-muted: 8 78% 96%;
+
+  /* Estados */
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Análises/gráficos (poucas cores, alto contraste entre si) */
+  --chart-1: 162 84% 34%; /* esmeralda */
+  --chart-2: 199 89% 45%; /* céu */
+  --chart-3: 38 92% 50%; /* âmbar */
+  --chart-4: 262 70% 58%; /* violeta */
+  --chart-5: 340 75% 55%; /* rosa */
+}
+
+.dark {
+  /* Ver a nota em :root — é isto que faz o ícone nativo de data dos filtros vir
+     claro, em vez de preto sobre o fundo escuro. */
+  color-scheme: dark;
+
+  /* ---- Cores — tema ESCURO (grafite quente, não azulado) ---- */
+  /* Neutros */
+  --background: 24 10% 7%;
+  --foreground: 40 20% 96%;
+  --card: 24 9% 11%;
+  --card-foreground: 40 20% 96%;
+  --popover: 24 9% 11%;
+  --popover-foreground: 40 20% 96%;
+  --secondary: 24 7% 16%;
+  --secondary-foreground: 40 20% 96%;
+  --muted: 24 7% 16%;
+  --muted-foreground: 30 6% 64%;
+  --border: 24 7% 19%;
+  --input: 24 7% 19%;
+
+  /* Marca / ação — esmeralda mais clara para brilhar no escuro */
+  --primary: 158 72% 45%;
+  --primary-foreground: 160 60% 7%;
+  --primary-muted: 160 30% 16%;
+  --primary-muted-foreground: 158 65% 68%;
+  /* Neutro de interação */
+  --accent: 24 7% 18%;
+  --accent-foreground: 40 20% 96%;
+  --ring: 158 72% 45%;
+
+  /* Dinheiro que ENTRA / que SAI — as duas sobem de luminosidade no escuro,
+     senão viram manchas no fundo grafite. */
+  --income: 142 62% 50%;
+  --income-foreground: 142 70% 8%;
+  --income-muted: 142 30% 16%;
+
+  --expense: 10 84% 62%;
+  --expense-foreground: 10 70% 10%;
+  --expense-muted: 8 35% 18%;
+
+  /* Estados */
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* Análises/gráficos */
+  --chart-1: 158 72% 47%; /* esmeralda */
+  --chart-2: 199 90% 56%; /* céu */
+  --chart-3: 41 96% 58%; /* âmbar */
+  --chart-4: 265 80% 70%; /* violeta */
+  --chart-5: 345 85% 65%; /* rosa */
+}

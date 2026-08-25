@@ -1,0 +1,16 @@
+-- =============================================================================
+-- Self OS · 01 · Criação do projeto
+-- Data: 25/08/2026
+-- =============================================================================
+
+-- Sem alterações de banco nesta implementação.
+--
+-- Esta leva é só a estruturação do front-end (shell, tema, i18n e os módulos
+-- placeholder). Nenhuma tabela, policy ou grant foi criado: o schema entra
+-- módulo a módulo, quando cada um for detalhado.
+--
+-- O que já está DECIDIDO e vale para todas as migrations futuras:
+--   • tenancy B2C por usuário → RLS por dono em TODAS as tabelas, sem exceção;
+--   • tabela `profile` com `id` = `auth.users.id`, e todo dado do sistema
+--     vinculado a um perfil;
+--   • valores monetários e custos de IA em CENTAVOS, coluna inteira.

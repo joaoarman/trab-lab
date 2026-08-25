@@ -1,0 +1,5 @@
+-- =========================================================================
+-- grants.sql
+-- Grants por role (anon, authenticated, service_role) — menor privilégio.
+-- Estado ATUAL do banco para esta entidade.
+-- =========================================================================

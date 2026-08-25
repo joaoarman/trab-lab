@@ -1,0 +1,5 @@
+-- =========================================================================
+-- tables.sql
+-- CREATE TABLE de cada tabela (estado final — sem ALTER).
+-- Estado ATUAL do banco para esta entidade.
+-- =========================================================================

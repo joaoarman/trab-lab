@@ -1,0 +1,6 @@
+-- =========================================================================
+-- full_schema.sql — estado COMPLETO do banco, na ordem de execução.
+-- Ordem: 1.extensions 2.enums 3.tables 4.indexes 5.functions 6.triggers
+--        7.views 8.RLS+policies 9.grants 10.realtime 11.storage 12.seeds
+-- Recria o banco do zero (mover de instância/país): copiar e colar no SQL Editor.
+-- =========================================================================

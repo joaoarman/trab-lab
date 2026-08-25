@@ -1,0 +1,82 @@
+{
+  "brand": {
+    "name": "Self OS",
+    "tagline": "Your personal operating system"
+  },
+  "nav": {
+    "primaryLabel": "Main navigation",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "chat": "Chat",
+    "chatSubtitle": "Track and query your finances by chatting",
+    "expenses": "Expenses",
+    "expensesSubtitle": "Everything that went out, by category and period",
+    "income": "Income",
+    "incomeSubtitle": "Everything that came in, by category and period",
+    "categories": "Categories",
+    "categoriesSubtitle": "Your category and subcategory hierarchy",
+    "log": "AI log",
+    "logSubtitle": "Calls, tokens and cost of every message"
+  },
+  "account": {
+    "menu": {
+      "label": "User menu",
+      "noName": "My account",
+      "notSignedIn": "Not signed in",
+      "myAccount": "My account",
+      "signOut": "Sign out"
+    }
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "label": "Language",
+    "ptBR": "Português (Brasil)",
+    "en": "English"
+  },
+  "placeholder": {
+    "title": "Module not implemented yet",
+    "description": "The structure of this screen already exists: page, components folder, data layer (supabase.ts). The content lands once the module is specified.",
+    "nextSteps": "Next steps"
+  },
+  "chat": {
+    "placeholder": {
+      "step1": "Conversation and AI log tables",
+      "step2": "Chat Edge Function with expense, income and category tools",
+      "step3": "Bubbles, audio recorder and transcription",
+      "step4": "Confirmation card for a saved record"
+    }
+  },
+  "expenses": {
+    "placeholder": {
+      "step1": "Expenses table tied to the profile, with owner RLS",
+      "step2": "List filtered by period and by category (subcategories included)",
+      "step3": "Create, edit and delete an expense from the screen"
+    }
+  },
+  "income": {
+    "placeholder": {
+      "step1": "Income table tied to the profile, with owner RLS",
+      "step2": "List filtered by period and by category (subcategories included)",
+      "step3": "Create, edit and delete an income entry from the screen"
+    }
+  },
+  "categories": {
+    "placeholder": {
+      "step1": "Categories table with a self-relation (parent category)",
+      "step2": "Recursive query summing the category and every descendant",
+      "step3": "Navigable tree to create, rename and move categories"
+    }
+  },
+  "log": {
+    "placeholder": {
+      "step1": "Log table with source (text or audio), model, tokens and cost",
+      "step2": "List by date showing what the AI called on each message",
+      "step3": "Usage totals per period"
+    }
+  }
+}
