@@ -22,9 +22,63 @@
     "menu": {
       "label": "User menu",
       "noName": "My account",
-      "notSignedIn": "Not signed in",
       "myAccount": "My account",
       "signOut": "Sign out"
+    },
+    "page": {
+      "title": "My account",
+      "description": "Your profile details and sign-in credentials"
+    },
+    "profile": {
+      "title": "Profile",
+      "description": "The photo and name shown across the system",
+      "unsaved": "Unsaved changes",
+      "saved": "Changes saved",
+      "saveFailed": "Couldn't save. Please try again."
+    },
+    "avatar": {
+      "add": "Add photo",
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "hint": "PNG, JPG or WebP.",
+      "zoom": "Zoom",
+      "cropTitle": "Adjust your photo",
+      "cropDescription": "Drag to position it and use the slider to zoom.",
+      "cropConfirm": "Use this photo",
+      "removeTitle": "Remove the photo?",
+      "removeDescription": "Your initials come back in its place. The removal only takes effect after you save.",
+      "errorType": "Format not accepted. Use PNG, JPG or WebP.",
+      "errorSize": "Image too large. Pick a smaller photo."
+    },
+    "security": {
+      "title": "Security",
+      "description": "The credentials that unlock your account",
+      "passwordHint": "Changed only with your current password"
+    },
+    "password": {
+      "title": "Change password",
+      "description": "Enter your current password to confirm it's you.",
+      "current": "Current password",
+      "new": "New password",
+      "changed": "Password changed"
+    },
+    "email": {
+      "title": "Change email",
+      "description": "You currently sign in with {{email}}.",
+      "new": "New email",
+      "changed": "Email changed",
+      "sameAsCurrent": "That's already your current email.",
+      "whyPassword": "We ask for your password so nobody can change the email on a session left open."
+    },
+    "sessions": {
+      "description": "What about the other devices you're signed in on?",
+      "keepAll": "Keep everything signed in",
+      "keepAllHint": "Nothing changes on your phone or other computers.",
+      "signOutOthers": "Sign out other devices",
+      "signOutOthersHint": "You stay signed in here.",
+      "signOutAll": "Sign out everywhere, including here",
+      "signOutAllHint": "You'll need to sign in again right now.",
+      "failed": "The change went through, but the sessions couldn't be ended."
     }
   },
   "theme": {
@@ -77,6 +131,61 @@
       "step1": "Log table with source (text or audio), model, tokens and cost",
       "step2": "List by date showing what the AI called on each message",
       "step3": "Usage totals per period"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "discard": "Discard",
+    "change": "Change",
+    "processing": "Working…"
+  },
+  "auth": {
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "What should we call you",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "repeatPassword": "Repeat password"
+    },
+    "password": {
+      "show": "Show password",
+      "hide": "Hide password",
+      "capsLock": "Caps Lock is on"
+    },
+    "passwordRules": {
+      "length": "At least {{min}} characters",
+      "lower": "A lowercase letter",
+      "upper": "An uppercase letter",
+      "digit": "A number",
+      "symbol": "A symbol (!, @, #…)"
+    },
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Access your account to continue",
+      "submit": "Sign in",
+      "noAccount": "No account yet?",
+      "goToSignup": "Create one"
+    },
+    "signup": {
+      "title": "Create account",
+      "subtitle": "It takes less than a minute",
+      "submit": "Create account",
+      "hasAccount": "Already have an account?",
+      "goToLogin": "Sign in"
+    },
+    "errors": {
+      "emailEmUso": "This email is already in use.",
+      "credenciaisInvalidas": "Wrong email or password.",
+      "senhaFraca": "The password doesn't meet the requirements.",
+      "senhaIgualAAtual": "The new password must be different from the current one.",
+      "emailInvalido": "Invalid email.",
+      "muitasTentativas": "Too many attempts. Wait a few minutes and try again.",
+      "semConexao": "No connection to the server.",
+      "desconhecido": "Couldn't finish. Please try again.",
+      "senhasNaoConferem": "The passwords don't match.",
+      "emailAguardandoConfirmacao": "The change is pending email confirmation. You still sign in with the old address."
     }
   }
 }

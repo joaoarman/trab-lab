@@ -1,0 +1,60 @@
+# =============================================================================
+# Cabeçalhos de segurança + roteamento da SPA (Apache — Hostinger).
+#
+# Tudo em `public/` é copiado para `dist/` no build, então este arquivo vai
+# junto no deploy. Ele NÃO vale no `npm run dev` (o servidor do Vite não é o
+# Apache) — o que é proposital: a CSP abaixo quebraria o HMR.
+#
+# O host do Supabase está NOMEADO na CSP abaixo, e precisa estar: a diretiva
+# `default-src 'self'` bloqueia todo servidor externo, e o Supabase é um deles.
+# Com o host errado (ou ausente), o navegador recusa toda chamada ao banco em
+# produção e o login para de funcionar — sem erro visível na tela, só no console.
+# Trocou de projeto Supabase? Troque nos três lugares (connect-src e img-src).
+# =============================================================================
+
+<IfModule mod_headers.c>
+  # --- CSP -------------------------------------------------------------------
+  # O token da sessão vive no localStorage, então um XSS aqui não é "um script
+  # estranho na página": é a conta inteira, sem precisar da senha. A CSP é a
+  # segunda barreira depois do React (que já escapa o que renderiza).
+  #
+  # Por que cada peça:
+  #   default-src 'self'      nada carrega de fora, salvo o que for liberado abaixo
+  #   connect-src             o Supabase: REST/Auth (https) e realtime (wss)
+  #   script-src 'unsafe-inline'  o script anti-flash do tema é inline no
+  #                           index.html e roda ANTES do React (ver o porquê lá).
+  #                           Um hash seria mais estrito, mas mudaria a cada
+  #                           ajuste no script e quebraria em silêncio.
+  #   style-src 'unsafe-inline'   o Radix (modais, menus) posiciona por style inline
+  #   img-src blob: data:     as prévias da foto de perfil antes de subir
+  #   frame-ancestors 'none'  clickjacking: ninguém embute o app num iframe.
+  #                           SÓ funciona como cabeçalho HTTP — numa <meta> é
+  #                           ignorado, e é por isso que este arquivo existe.
+  Header always set Content-Security-Policy "default-src 'self'; connect-src 'self' https://xcxueyenovsowdzqkovm.supabase.co wss://xcxueyenovsowdzqkovm.supabase.co; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://xcxueyenovsowdzqkovm.supabase.co; font-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'"
+
+  # Redundante com frame-ancestors, para navegadores antigos que não leem CSP nível 2.
+  Header always set X-Frame-Options "DENY"
+
+  # Impede o navegador de "adivinhar" o tipo de um arquivo e executar como script
+  # algo que foi servido como imagem.
+  Header always set X-Content-Type-Options "nosniff"
+
+  # Não vaza a URL interna do app (que pode conter ids) para sites de terceiros.
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Recursos do aparelho que este app não usa. Se o Chat ganhar gravação de áudio,
+  # `microphone=(self)` entra aqui.
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# --- Roteamento da SPA -------------------------------------------------------
+# Sem isto, abrir https://selfos.com.br/account direto (ou recarregar a página)
+# devolve 404: o Apache procura um arquivo `/account` que não existe. Toda rota
+# que não seja um arquivo real cai no index.html, e o React Router resolve.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

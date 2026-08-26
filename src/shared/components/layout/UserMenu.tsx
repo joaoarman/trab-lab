@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { Check, ChevronsUpDown, Languages, LogOut, Monitor, Moon, Sun, UserRound } from 'lucide-react'
-import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar'
+import { PerfilAvatar } from '@/shared/components/PerfilAvatar'
 import { Button } from '@/shared/components/ui/button'
 import {
   DropdownMenu,
@@ -16,7 +17,10 @@ import {
   DropdownMenuTrigger,
 } from '@/shared/components/ui/dropdown-menu'
 import { useTheme, type Theme } from '@/shared/context/ThemeContext'
+import { useAuth } from '@/shared/context/AuthContext'
+import { urlDoAvatar } from '@/shared/lib/avatar'
 import i18n, { LANGUAGES, setLanguage, type LanguageCode } from '@/shared/i18n'
+import { ROTA_DA_CONTA } from './navigation'
 
 /**
  * O menu do usuário — e, junto com ele, o **tema** e o **idioma**.
@@ -26,16 +30,15 @@ import i18n, { LANGUAGES, setLanguage, type LanguageCode } from '@/shared/i18n'
  * gastaria, em toda tela, espaço que no celular é do título — e o Chat, que é a
  * tela principal, é justamente a que menos quer enfeite em volta.
  *
- * ## Autenticação ainda não existe
+ * ## De onde vêm nome, e-mail e foto
  *
- * O login (perfil, sessão, sair) é um módulo à parte, ainda por implementar. Até
- * lá o menu mostra o estado deslogado e os itens de conta ficam **desabilitados**
- * — desabilitado é honesto: o item existe, o lugar dele é este, mas ainda não
- * leva a lugar nenhum. Esconder faria a navegação mudar de forma no dia em que o
- * login entrasse.
+ * Do `AuthContext` — o mesmo provider que a guarda de rota consulta. O e-mail sai
+ * da **sessão**, não do perfil: `auth.users` é a fonte da verdade e
+ * `profile.email` é uma cópia mantida por trigger. Se as duas divergirem por um
+ * instante, o que o menu mostra é o endereço que vale para entrar no sistema.
  *
- * Quando o auth entrar: troque `nome`/`email` pelo perfil do contexto de
- * autenticação, e ligue os `onSelect` de "Minha conta" e "Sair".
+ * O menu nunca aparece deslogado: ele vive dentro do shell, e o shell inteiro
+ * está atrás da guarda de rota. Por isso não há estado "sem usuário" aqui.
  */
 const ICONES_DE_TEMA: Record<Theme, typeof Sun> = {
   light: Sun,
@@ -46,19 +49,27 @@ const ICONES_DE_TEMA: Record<Theme, typeof Sun> = {
 export function UserMenu({ variant = 'full' }: { variant?: 'full' | 'compact' }) {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
+  const { perfil, session, sairDaConta } = useAuth()
+  const navigate = useNavigate()
   const idiomaAtual = i18n.language as LanguageCode
 
-  // Sem auth ainda: o rótulo diz o estado em vez de inventar um usuário.
-  const nome = t('account.menu.noName')
-  const email = t('account.menu.notSignedIn')
+  // O perfil chega um instante depois da sessão. Nesse intervalo o menu mostra o
+  // e-mail (que já veio no token) em vez de um espaço vazio piscando.
+  const email = session?.user.email ?? ''
+  const nome = perfil?.nome?.trim() || t('account.menu.noName')
+  const fotoUrl = perfil ? urlDoAvatar(perfil) : null
   const IconeDoTema = ICONES_DE_TEMA[theme]
 
+  // As iniciais saem do nome do PERFIL, não do rótulo exibido: `nome` cai num
+  // texto traduzido ("Sem nome") quando o perfil ainda não chegou, e virar "SN"
+  // no círculo pareceria o nome de alguém.
   const avatar = (
-    <Avatar className="size-8">
-      <AvatarFallback className="bg-primary-muted text-sm font-medium text-primary-muted-foreground">
-        <UserRound className="size-4" aria-hidden />
-      </AvatarFallback>
-    </Avatar>
+    <PerfilAvatar
+      url={fotoUrl}
+      nome={perfil?.nome ?? ''}
+      className="size-8"
+      classNameFallback="text-sm"
+    />
   )
 
   return (
@@ -141,12 +152,13 @@ export function UserMenu({ variant = 'full' }: { variant?: 'full' | 'compact' })
 
         <DropdownMenuSeparator />
 
-        {/* Ainda sem autenticação — ver a nota no topo do arquivo. */}
-        <DropdownMenuItem disabled>
+        <DropdownMenuItem onSelect={() => navigate(ROTA_DA_CONTA)}>
           <UserRound className="size-4" aria-hidden />
           {t('account.menu.myAccount')}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
+        {/* Sair não navega: encerrar a sessão faz a guarda de rota trocar a tela
+            sozinha. Navegar aqui também correria com ela pelo mesmo destino. */}
+        <DropdownMenuItem onSelect={() => void sairDaConta()}>
           <LogOut className="size-4" aria-hidden />
           {t('account.menu.signOut')}
         </DropdownMenuItem>

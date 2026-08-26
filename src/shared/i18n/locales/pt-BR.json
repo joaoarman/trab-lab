@@ -22,9 +22,63 @@
     "menu": {
       "label": "Menu do usuário",
       "noName": "Minha conta",
-      "notSignedIn": "Não autenticado",
       "myAccount": "Minha conta",
       "signOut": "Sair"
+    },
+    "page": {
+      "title": "Minha conta",
+      "description": "Seus dados de perfil e as chaves de acesso"
+    },
+    "profile": {
+      "title": "Perfil",
+      "description": "A foto e o nome que aparecem no sistema",
+      "unsaved": "Alterações não salvas",
+      "saved": "Alterações salvas",
+      "saveFailed": "Não foi possível salvar. Tente de novo."
+    },
+    "avatar": {
+      "add": "Adicionar foto",
+      "change": "Trocar foto",
+      "remove": "Remover foto",
+      "hint": "PNG, JPG ou WebP.",
+      "zoom": "Aproximar",
+      "cropTitle": "Ajustar a foto",
+      "cropDescription": "Arraste para posicionar e use o controle para aproximar.",
+      "cropConfirm": "Usar esta foto",
+      "removeTitle": "Remover a foto?",
+      "removeDescription": "A foto volta a ser as suas iniciais. A remoção só vale depois de salvar.",
+      "errorType": "Formato não aceito. Use PNG, JPG ou WebP.",
+      "errorSize": "Imagem grande demais. Escolha uma foto menor."
+    },
+    "security": {
+      "title": "Segurança",
+      "description": "As credenciais que dão acesso à sua conta",
+      "passwordHint": "Trocada apenas com a senha atual"
+    },
+    "password": {
+      "title": "Trocar a senha",
+      "description": "Informe a senha atual para confirmar que é você.",
+      "current": "Senha atual",
+      "new": "Nova senha",
+      "changed": "Senha alterada"
+    },
+    "email": {
+      "title": "Trocar o e-mail",
+      "description": "Hoje você entra com {{email}}.",
+      "new": "Novo e-mail",
+      "changed": "E-mail alterado",
+      "sameAsCurrent": "Este já é o seu e-mail atual.",
+      "whyPassword": "Pedimos a senha para impedir que alguém troque o e-mail de uma sessão deixada aberta."
+    },
+    "sessions": {
+      "description": "E os outros aparelhos em que você está logado?",
+      "keepAll": "Manter todos conectados",
+      "keepAllHint": "Nada muda no celular nem nos outros computadores.",
+      "signOutOthers": "Sair dos outros aparelhos",
+      "signOutOthersHint": "Você continua conectado aqui.",
+      "signOutAll": "Sair de todos, inclusive deste",
+      "signOutAllHint": "Você vai precisar entrar de novo agora.",
+      "failed": "A alteração valeu, mas não foi possível encerrar as sessões."
     }
   },
   "theme": {
@@ -77,6 +131,61 @@
       "step1": "Tabela de log com origem (texto ou áudio), modelo, tokens e custo",
       "step2": "Lista por data com o que a IA chamou em cada mensagem",
       "step3": "Totais de consumo por período"
+    }
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "discard": "Descartar",
+    "change": "Alterar",
+    "processing": "Processando…"
+  },
+  "auth": {
+    "fields": {
+      "name": "Nome",
+      "namePlaceholder": "Como você quer ser chamado",
+      "email": "E-mail",
+      "emailPlaceholder": "voce@exemplo.com",
+      "password": "Senha",
+      "repeatPassword": "Repetir a senha"
+    },
+    "password": {
+      "show": "Mostrar a senha",
+      "hide": "Ocultar a senha",
+      "capsLock": "Caps Lock está ligado"
+    },
+    "passwordRules": {
+      "length": "Pelo menos {{min}} caracteres",
+      "lower": "Uma letra minúscula",
+      "upper": "Uma letra maiúscula",
+      "digit": "Um número",
+      "symbol": "Um símbolo (!, @, #…)"
+    },
+    "login": {
+      "title": "Entrar",
+      "subtitle": "Acesse sua conta para continuar",
+      "submit": "Entrar",
+      "noAccount": "Ainda não tem conta?",
+      "goToSignup": "Criar conta"
+    },
+    "signup": {
+      "title": "Criar conta",
+      "subtitle": "Leva menos de um minuto",
+      "submit": "Criar conta",
+      "hasAccount": "Já tem conta?",
+      "goToLogin": "Entrar"
+    },
+    "errors": {
+      "emailEmUso": "Este e-mail já está em uso.",
+      "credenciaisInvalidas": "E-mail ou senha incorretos.",
+      "senhaFraca": "A senha não atende aos requisitos.",
+      "senhaIgualAAtual": "A nova senha precisa ser diferente da atual.",
+      "emailInvalido": "E-mail inválido.",
+      "muitasTentativas": "Muitas tentativas. Espere alguns minutos e tente de novo.",
+      "semConexao": "Sem conexão com o servidor.",
+      "desconhecido": "Não foi possível concluir. Tente de novo.",
+      "senhasNaoConferem": "As senhas não conferem.",
+      "emailAguardandoConfirmacao": "A troca ficou pendente de confirmação por e-mail. O login segue sendo o endereço antigo."
     }
   }
 }

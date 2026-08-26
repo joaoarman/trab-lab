@@ -1,4 +1,11 @@
-import { MessageCircle, ArrowDownCircle, ArrowUpCircle, FolderTree, ScrollText } from 'lucide-react'
+import {
+  MessageCircle,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  FolderTree,
+  ScrollText,
+  UserRound,
+} from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 /**
@@ -49,25 +56,25 @@ export const NAV_ITEMS: NavItem[] = [
     icon: MessageCircle,
   },
   {
-    to: '/gastos',
+    to: '/expenses',
     labelKey: 'nav.expenses',
     subtitleKey: 'nav.expensesSubtitle',
     icon: ArrowUpCircle,
   },
   {
-    to: '/receitas',
+    to: '/income',
     labelKey: 'nav.income',
     subtitleKey: 'nav.incomeSubtitle',
     icon: ArrowDownCircle,
   },
   {
-    to: '/categorias',
+    to: '/categories',
     labelKey: 'nav.categories',
     subtitleKey: 'nav.categoriesSubtitle',
     icon: FolderTree,
   },
   {
-    to: '/log',
+    to: '/ai-log',
     labelKey: 'nav.log',
     subtitleKey: 'nav.logSubtitle',
     icon: ScrollText,
@@ -79,12 +86,35 @@ export const NAV_ITEMS: NavItem[] = [
 export const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) => item.bottomNav !== false)
 
 /**
+ * Telas que têm título no header mas **não** aparecem na navegação.
+ *
+ * "Minha conta" se alcança pelo menu do usuário, não pelo menu do sistema — ela
+ * não é um módulo do Self OS, é a configuração de quem está usando. Mas continua
+ * precisando de um título no header como qualquer outra tela, e o título tem que
+ * sair do mesmo lugar que os demais: senão a rota cairia no nome do produto e a
+ * página teria que escrever o próprio cabeçalho, que é justamente o que este
+ * arquivo existe para evitar.
+ */
+export const ROTA_DA_CONTA = '/account'
+
+export const ROTAS_AUXILIARES: NavItem[] = [
+  {
+    to: ROTA_DA_CONTA,
+    labelKey: 'account.page.title',
+    subtitleKey: 'account.page.description',
+    icon: UserRound,
+  },
+]
+
+/**
  * Qual item corresponde à rota atual — é dele que o header tira o título.
  *
  * Compara com `startsWith` além da igualdade para que uma rota filha (ex.:
- * `/gastos/123`) continue apontando para o módulo pai, em vez de deixar o header
+ * `/expenses/123`) continue apontando para o módulo pai, em vez de deixar o header
  * sem título.
  */
 export function findActiveItem(pathname: string): NavItem | undefined {
-  return NAV_ITEMS.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`))
+  return [...NAV_ITEMS, ...ROTAS_AUXILIARES].find(
+    (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
+  )
 }

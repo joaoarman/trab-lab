@@ -140,6 +140,22 @@
   --destructive: 0 72% 45%;
   --destructive-foreground: 0 0% 100%;
 
+  /* ATENÇÃO — âmbar. O aviso de "alterações não salvas" na tela de conta, e o
+     que vier depois com o mesmo papel: "isto ainda não está gravado", "isto
+     precisa da sua atenção antes de sair da tela".
+
+     É uma quarta cor de estado porque as outras três já significam outra coisa,
+     e reaproveitar qualquer uma delas mentiria para o usuário:
+       --destructive  é PERIGO (excluir, irreversível) — um nome ainda não salvo
+                      não é um erro, é um trabalho em andamento;
+       --expense      é dinheiro que SAI — no app inteiro o coral quer dizer
+                      "gasto", e um aviso coral no formulário de perfil leria
+                      como um valor;
+       --primary      é a marca/ação — não avisa nada, convida a clicar. */
+  --warning: 38 92% 42%;
+  --warning-foreground: 0 0% 100%;
+  --warning-muted: 44 90% 94%;
+
   /* Análises/gráficos (poucas cores, alto contraste entre si) */
   --chart-1: 162 84% 34%; /* esmeralda */
   --chart-2: 199 89% 45%; /* céu */
@@ -191,6 +207,12 @@
   /* Estados */
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
+
+  /* Atenção — ver a nota em :root. Sobe de luminosidade e o fundo suave escurece,
+     senão o aviso vira uma mancha clara demais sobre o grafite. */
+  --warning: 41 96% 55%;
+  --warning-foreground: 38 70% 10%;
+  --warning-muted: 40 40% 17%;
 
   /* Análises/gráficos */
   --chart-1: 158 72% 47%; /* esmeralda */

@@ -1,0 +1,130 @@
+# =============================================================================
+# CONFIGURAÇÃO DO PROJETO SUPABASE — aplicada com `supabase config push`.
+#
+# Este arquivo é a FONTE DA VERDADE da configuração de projeto (o que se mexeria
+# no Dashboard). O `config push` aplica a configuração INTEIRA a partir daqui:
+# **o que não estiver declarado volta ao padrão do CLI**. Então nada de mexer no
+# painel "por cima" — o que precisa sobreviver tem de estar escrito aqui.
+#
+# O push NÃO toca em tabelas, RLS, policies, functions ou buckets: isso é schema,
+# e vive em supabase/migrations/ + supabase/schema/. Os dois planos são
+# independentes.
+#
+# Como aplicar (da raiz do repositório):
+#     supabase link --project-ref xcxueyenovsowdzqkovm
+#     supabase config push          # revise o diff ANTES de confirmar
+#
+# Se um dia entrar segredo aqui (ex.: senha de SMTP), ele vai por env():
+#     set -a && source .env && set +a && supabase config push
+# Hoje não há nenhum — o sistema não envia e-mail e não usa provedor externo.
+# =============================================================================
+
+# O `ref` do projeto: o "xcxueyenovsowdzqkovm" de
+# https://xcxueyenovsowdzqkovm.supabase.co (o mesmo da VITE_SUPABASE_URL no .env).
+# É LITERAL aqui — não sai do .env.
+project_id = "xcxueyenovsowdzqkovm"
+
+
+[auth]
+enabled = true
+
+# ALLOWLIST DE REDIRECT — fecha o "open redirect".
+# Sem esta lista travada, alguém forjaria um link de auth apontando o redirect
+# para o site dele: o e-mail seria legítimo, a vítima só clicaria, e o token dela
+# chegaria no servidor do atacante. O Supabase recusa redirecionar para fora
+# daqui. Nada de curinga ("*") — o curinga devolve exatamente o buraco que a
+# lista existe para fechar.
+#
+# TODO(preencher): confirmar o domínio de produção quando o site for publicado.
+site_url = "https://selfos.com.br"
+additional_redirect_urls = [
+  "http://localhost:5173",
+]
+
+# Cadastro aberto: é um app B2C, cada pessoa cria a própria conta.
+enable_signup = true
+
+# Sem login anônimo e sem vínculo manual de identidades: só e-mail + senha.
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+
+# REGRA DE SENHA.
+# `lower_upper_letters_digits_symbols` é o nível mais alto que o Supabase
+# oferece: exige minúscula, MAIÚSCULA, dígito e símbolo. Não existe um nível
+# "letra + número + símbolo" sem a exigência de maiúscula — então a tela de
+# cadastro mostra os quatro requisitos numa lista que vai marcando conforme a
+# pessoa digita, em vez de deixá-la adivinhar por que a senha foi recusada.
+#
+# O mínimo de 6 é curto para uma senha, e aqui pesa mais que o normal: este
+# projeto não tem recuperação de senha (ver PENDENCIAS.md). Subir para 8
+# é uma linha — e um bom primeiro passo se o sistema sair da disciplina.
+minimum_password_length = 6
+password_requirements = "lower_upper_letters_digits_symbols"
+
+
+[auth.email]
+enable_signup = true
+
+# CONFIRMAÇÃO DE E-MAIL DESLIGADA — decisão do projeto.
+# A conta nasce com email_confirmed_at preenchido e o sistema não envia e-mail
+# nenhum. Consequências (documentadas como risco aceito no PENDENCIAS.md):
+# o endereço nunca é comprovado, e não há "esqueci a senha".
+# Para religar: este knob vira `true` e entra um provedor de SMTP —
+# o passo a passo completo está no PENDENCIAS.md.
+enable_confirmations = false
+
+# Se a confirmação for religada, o código vai só para o endereço NOVO na troca
+# de e-mail (o antigo não precisa aprovar). Declarado desde já para o dia em que
+# `enable_confirmations` mudar.
+double_confirm_changes = false
+
+# Fica FALSE de propósito: quando true, o GoTrue exige um código de
+# reautenticação ENVIADO POR E-MAIL para trocar a senha — e este projeto não
+# envia e-mail, então a troca de senha simplesmente pararia de funcionar.
+# A reautenticação existe e é real: a tela pede a senha atual e valida antes de
+# aplicar a nova (src/pages/Account/supabase.ts).
+secure_password_change = false
+
+
+# LIMITES DE REQUISIÇÃO — a rede base contra abuso.
+# Este projeto não tem CAPTCHA (ver PENDENCIAS.md), então o rate limit é a única
+# trava automática contra chutar senha em massa no login. Os valores são os
+# padrões do Supabase, declarados explicitamente para sobreviverem ao push.
+#
+# ATENÇÃO à unidade, que MUDA de chave para chave: as três primeiras são por
+# HORA; as três últimas, por JANELA DE 5 MINUTOS. Confundir as duas leva a
+# achar que o limite é 12x mais apertado do que é.
+[auth.rate_limit]
+# Por hora. Irrelevante aqui (nada é enviado), mas declarado para o push não o
+# deixar num valor indefinido.
+email_sent = 2
+# Por hora. Não há SMS neste projeto.
+sms_sent = 30
+# Por hora, por IP. Login anônimo está desligado.
+anonymous_users = 30
+# Por 5 minutos, por IP.
+token_refresh = 150
+# Por 5 minutos, por IP: o teto do força-bruta de senha. São ~360 tentativas por
+# hora vindas do mesmo endereço — o que segura um script ingênuo, mas não é
+# grande coisa. Quem realmente protege a conta aqui é a entropia da senha, e é
+# por isso que o mínimo de 6 caracteres incomoda (ver a nota em [auth]).
+sign_in_sign_ups = 30
+# Por 5 minutos, por IP. Sem OTP hoje; passa a importar se a confirmação de
+# e-mail for religada — é o limite que impede chutar o código de 6 dígitos.
+token_verifications = 30
+
+
+# -----------------------------------------------------------------------------
+# NÃO DECLARADOS DE PROPÓSITO (e o que isso significa)
+#
+# [auth.email.smtp]      — não há provedor de e-mail; nada é enviado.
+# [auth.email.template.*] — sem e-mail, não há template.
+# [auth.captcha]         — CAPTCHA ficou como pendência (ver PENDENCIAS.md).
+# [auth.external.google] — login social ficou como pendência (idem).
+# [auth.sessions]        — sem expiração por tempo: a sessão renova sozinha.
+#                          O front trata o que importa (refresh que falha e
+#                          conta desativada) derrubando a sessão de vez.
+#
+# Como o push reseta o que não está declarado, deixar de fora é a MANEIRA de
+# manter tudo isso desligado — não um esquecimento.
+# -----------------------------------------------------------------------------

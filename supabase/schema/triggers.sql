@@ -3,3 +3,35 @@
 -- Triggers.
 -- Estado ATUAL do banco para esta entidade.
 -- =========================================================================
+
+-- --- auth.users ----------------------------------------------------------
+
+-- Caminho real deste projeto: com a confirmação de e-mail DESLIGADA, a conta já
+-- nasce confirmada no próprio INSERT.
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Rede para o dia em que a confirmação for LIGADA (aí o perfil só deve nascer
+-- depois que a pessoa confirmar).
+drop trigger if exists on_auth_user_confirmed on auth.users;
+create trigger on_auth_user_confirmed
+  after update of email_confirmed_at on auth.users
+  for each row
+  when (old.email_confirmed_at is null and new.email_confirmed_at is not null)
+  execute function public.handle_new_user();
+
+-- Espelho do e-mail em profile.email.
+drop trigger if exists on_auth_user_email_updated on auth.users;
+create trigger on_auth_user_email_updated
+  after update of email on auth.users
+  for each row execute function public.handle_user_email_update();
+
+-- --- public.profile ------------------------------------------------------
+
+-- Colunas somente-leitura para o cliente + updated_at automático.
+drop trigger if exists on_profile_before_update on public.profile;
+create trigger on_profile_before_update
+  before update on public.profile
+  for each row execute function public.profile_guard_and_touch();
