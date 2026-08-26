@@ -45,3 +45,15 @@ create index if not exists expense_profile_occurred_idx
 create index if not exists expense_category_idx
   on public.expense (category_id)
   where deleted_at is null;
+
+-- --- public.income -------------------------------------------------------
+
+-- A leitura da tela e a do Chat: "as receitas deste perfil, neste período, da
+-- mais recente para a mais antiga". As colunas na ordem em que a query as usa.
+--
+-- É o ÚNICO índice do módulo, e a ausência do segundo é a diferença de Gastos:
+-- lá existe `expense_category_idx` porque a tela filtra por categoria e porque
+-- `category_linked_records` conta por categoria. Receita não tem categoria.
+create index if not exists income_profile_received_idx
+  on public.income (profile_id, received_at desc)
+  where deleted_at is null;

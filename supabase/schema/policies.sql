@@ -81,3 +81,28 @@ create policy expense_update_own on public.expense
 -- Sem policy de DELETE, de propósito: a saída é o soft-delete de
 -- `expense_remove()`. Um DELETE de verdade levaria o histórico embora, e um
 -- extrato que perde linhas para sempre não fecha com o mês anterior.
+
+-- --- public.income -------------------------------------------------------
+alter table public.income enable row level security;
+
+-- `deleted_at is null` nas policies, e não só nas queries do front: "excluída
+-- sumiu" é garantia do BANCO, não convenção que a próxima tela pode esquecer.
+drop policy if exists income_select_own on public.income;
+create policy income_select_own on public.income
+  for select to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null);
+
+drop policy if exists income_insert_own on public.income;
+create policy income_insert_own on public.income
+  for insert to authenticated
+  with check (profile_id = public.current_profile_id());
+
+drop policy if exists income_update_own on public.income;
+create policy income_update_own on public.income
+  for update to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null)
+  with check (profile_id = public.current_profile_id());
+
+-- Sem policy de DELETE, de propósito: a saída é o soft-delete de
+-- `income_remove()`. Um DELETE de verdade levaria o histórico embora, e um
+-- extrato que perde linhas para sempre não fecha com o mês anterior.

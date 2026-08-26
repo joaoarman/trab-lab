@@ -169,12 +169,26 @@ export interface RascunhoDeGasto {
   ocorreuEm: string
 }
 
-/** O recorte que a lista de gastos está mostrando. */
-export interface FiltroDeGastos {
+/**
+ * Um recorte de tempo — as duas pontas de um período, **fechadas nas duas**.
+ *
+ * Mora aqui, e não na pasta de um módulo, porque três coisas o usam: o filtro de
+ * Gastos, o de Receitas e as funções puras de `shared/utils/datas.ts` (os
+ * atalhos "este mês"/"mês passado" e a conversão para os limites `timestamptz`
+ * da consulta).
+ *
+ * As datas trafegam como `YYYY-MM-DD` porque é o formato do `<input type="date">`
+ * — e sempre em data **local**, nunca em UTC. O porquê está no `periodo.ts`.
+ */
+export interface RecorteDePeriodo {
   /** Data (YYYY-MM-DD), inclusive — o dia inteiro entra. */
   de: string
   /** Data (YYYY-MM-DD), inclusive — o dia inteiro entra. */
   ate: string
+}
+
+/** O recorte que a lista de gastos está mostrando: período + categoria. */
+export interface FiltroDeGastos extends RecorteDePeriodo {
   /**
    * `null` = todas as categorias · `'sem'` = só os gastos sem categoria ·
    * número = aquela categoria **e todos os descendentes dela** (é o que faz
@@ -182,3 +196,88 @@ export interface FiltroDeGastos {
    */
   categoriaId: number | 'sem' | null
 }
+
+/**
+ * Uma receita — a linha de `public.income` traduzida.
+ *
+ * ## O espelho de `Gasto`, com duas diferenças de propósito
+ *
+ * **Não tem categoria.** Não é simplificação: é o que a natureza do dado pede.
+ * Gasto se pergunta "em quê?", e a resposta é uma árvore inteira
+ * (`Carro › Gasolina`), porque um mês tem dezenas de gastos espalhados. Receita
+ * se pergunta "de onde?", e a resposta cabe no `nome`: salário, freela, aluguel.
+ * São três ou quatro linhas por mês, e classificar três linhas numa hierarquia é
+ * fricção sem retorno.
+ *
+ * **Tem duas datas, e as duas aparecem na tela** — ver `recebidaEm` e
+ * `registradaEm`.
+ *
+ * O resto é igual, e igual pelos mesmos motivos: `valor` é o que entrou na moeda
+ * em que entrou, `valorEmBrl` é o mesmo em reais, e é o **segundo** que todo
+ * total soma. Quem converte é a trigger `income_guard`, no banco — o front manda
+ * valor, moeda e cotação, e não tem grant na coluna convertida.
+ */
+export interface Receita {
+  id: number
+  /** De onde veio o dinheiro ("salário", "freela do site"). O único descritor. */
+  nome: string
+  /** Em reais (ou na unidade de `moeda`). US$ 500,00 = `500` — não em centavos. */
+  valor: number
+  moeda: Moeda
+  /**
+   * A taxa de câmbio do **momento do registro**: quantos reais valia 1 unidade
+   * de `moeda`. `null` quando a receita já é em reais.
+   *
+   * É guardada, e não recalculada na leitura, porque cotação é um fato datado: o
+   * freela de US$ 500 recebido em março valeu o dólar de março.
+   */
+  cotacao: number | null
+  /** O mesmo valor convertido para reais. É esta coluna que todo total soma. */
+  valorEmBrl: number
+  /**
+   * Quando o dinheiro **entrou** — não quando a receita foi registrada.
+   *
+   * É por ela que a lista ordena e agrupa. A distinção com `registradaEm` é o
+   * motivo de as duas existirem: dá para lançar na segunda o salário que caiu na
+   * sexta, e ordenar pelo registro colocaria esse salário no topo, como se
+   * tivesse acabado de entrar.
+   */
+  recebidaEm: string
+  /**
+   * Quando a receita foi **registrada no sistema**.
+   *
+   * Em `Gasto` o equivalente (`criadoEm`) existe mas não vai para a tela. Aqui
+   * ele é **exibido**, a pedido: a lista mostra as duas datas, e a diferença
+   * entre elas — "recebi na sexta, lancei na segunda" — fica auditável a olho
+   * nu, sem abrir nada.
+   *
+   * O cliente não tem grant de escrita nesta coluna. É o que impede antedatar o
+   * próprio registro e esvaziar o sentido do que a tela mostra.
+   */
+  registradaEm: string
+  /** Hoje só acompanha a exclusão. Reservado para um "arquivar" futuro. */
+  ativa: boolean
+}
+
+/** O que a tela manda para criar ou salvar uma receita. */
+export interface RascunhoDeReceita {
+  nome: string
+  /** Em reais (ou na unidade da moeda escolhida). */
+  valor: number
+  moeda: Moeda
+  /** Obrigatória fora do real; ignorada (e zerada pelo banco) quando é BRL. */
+  cotacao: number | null
+  /** ISO 8601. */
+  recebidaEm: string
+}
+
+/**
+ * O recorte que a lista de receitas está mostrando.
+ *
+ * É só o período — sem o `categoriaId` de `FiltroDeGastos`, porque receita não
+ * tem categoria. O alias existe em vez do uso direto de `RecorteDePeriodo` para
+ * que a assinatura de `listarReceitas` diga o que ela recebe, e para que um
+ * filtro novo (moeda, faixa de valor) tenha onde entrar sem mexer no tipo
+ * compartilhado.
+ */
+export type FiltroDeReceitas = RecorteDePeriodo

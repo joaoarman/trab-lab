@@ -12,7 +12,7 @@
     "expenses": "Gastos",
     "expensesSubtitle": "Tudo que saiu, por categoria e período",
     "income": "Receitas",
-    "incomeSubtitle": "Tudo que entrou, por categoria e período",
+    "incomeSubtitle": "Tudo que entrou, por período",
     "categories": "Categorias",
     "categoriesSubtitle": "Sua hierarquia de categorias e subcategorias",
     "log": "Log da IA",
@@ -120,16 +120,8 @@
       "action": "Registrar um gasto"
     },
     "filters": {
-      "period": "Período",
-      "from": "De",
-      "to": "Até",
       "category": "Categoria",
-      "allCategories": "Todas as categorias",
-      "esteMes": "Este mês",
-      "mesPassado": "Mês passado",
-      "ultimos30": "Últimos 30 dias",
-      "esteAno": "Este ano",
-      "custom": "Personalizado"
+      "allCategories": "Todas as categorias"
     },
     "list": {
       "actions": "Ações de {{name}}",
@@ -141,13 +133,6 @@
       "editTitle": "Editar gasto",
       "name": "No que foi",
       "namePlaceholder": "Ex.: posto de gasolina",
-      "amount": "Valor",
-      "amountPlaceholder": "0,00",
-      "currency": "Moeda",
-      "rate": "Cotação do {{currency}} (em reais)",
-      "refreshRate": "Buscar a cotação de agora",
-      "rateFailed": "Não conseguimos buscar a cotação. Informe o valor do dólar à mão para continuar.",
-      "preview": "Equivale a {{value}}",
       "category": "Categoria",
       "noCategory": "Sem categoria",
       "occurredAt": "Quando foi",
@@ -169,10 +154,45 @@
     }
   },
   "income": {
-    "placeholder": {
-      "step1": "Tabela de receitas vinculada ao perfil, com RLS por dono",
-      "step2": "Lista com filtro por período e por categoria (incluindo subcategorias)",
-      "step3": "Criar, editar e excluir uma receita pela tela"
+    "page": {
+      "count_one": "{{count}} receita no período",
+      "count_other": "{{count}} receitas no período",
+      "new": "Nova receita",
+      "loadFailed": "Não foi possível carregar as receitas.",
+      "retry": "Tentar de novo"
+    },
+    "empty": {
+      "title": "Nenhuma receita por aqui",
+      "description": "Nada foi registrado neste período. Mude o recorte acima para procurar em outra data — ou registre uma receita agora. No chat, basta escrever \"recebi 3000 de salário\".",
+      "action": "Registrar uma receita"
+    },
+    "list": {
+      "registeredAt": "registrada em {{date}}",
+      "actions": "Ações de {{name}}",
+      "edit": "Editar",
+      "remove": "Excluir"
+    },
+    "form": {
+      "createTitle": "Nova receita",
+      "editTitle": "Editar receita",
+      "name": "De onde veio",
+      "namePlaceholder": "Ex.: salário",
+      "receivedAt": "Quando entrou",
+      "registeredAt": "Registrada em {{date}}",
+      "created": "Receita registrada",
+      "saved": "Receita salva"
+    },
+    "remove": {
+      "title": "Excluir {{name}}?",
+      "description": "{{value}} em {{date}}. A receita sai da lista e deixa de contar nos totais.",
+      "confirm": "Excluir",
+      "done": "Receita excluída"
+    },
+    "errors": {
+      "cotacaoObrigatoria": "Informe a cotação para uma receita em moeda estrangeira.",
+      "valorForaDeFaixa": "Valor fora do limite aceito. Confira o que foi digitado.",
+      "naoEncontrada": "Esta receita não existe mais. Recarregue a tela.",
+      "desconhecido": "Não foi possível concluir. Tente de novo."
     }
   },
   "categories": {
@@ -314,5 +334,24 @@
       "senhasNaoConferem": "As senhas não conferem.",
       "emailAguardandoConfirmacao": "A troca ficou pendente de confirmação por e-mail. O login segue sendo o endereço antigo."
     }
+  },
+  "period": {
+    "label": "Período",
+    "from": "De",
+    "to": "Até",
+    "esteMes": "Este mês",
+    "mesPassado": "Mês passado",
+    "ultimos30": "Últimos 30 dias",
+    "esteAno": "Este ano",
+    "custom": "Personalizado"
+  },
+  "money": {
+    "amount": "Valor",
+    "amountPlaceholder": "0,00",
+    "currency": "Moeda",
+    "rate": "Cotação do {{currency}} (em reais)",
+    "refreshRate": "Buscar a cotação de agora",
+    "rateFailed": "Não conseguimos buscar a cotação. Informe o valor do dólar à mão para continuar.",
+    "preview": "Equivale a {{value}}"
   }
 }

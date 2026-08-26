@@ -52,3 +52,12 @@ drop trigger if exists on_expense_before_write on public.expense;
 create trigger on_expense_before_write
   before insert or update on public.expense
   for each row execute function public.expense_guard();
+
+-- --- public.income --------------------------------------------------------
+
+-- Normaliza o nome, aplica "excluída é sempre inativa" e — o principal —
+-- CALCULA o valor em reais a partir do valor e da cotação.
+drop trigger if exists on_income_before_write on public.income;
+create trigger on_income_before_write
+  before insert or update on public.income
+  for each row execute function public.income_guard();

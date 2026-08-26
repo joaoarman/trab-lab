@@ -6,17 +6,18 @@ import { Alert } from '@/shared/components/ui/alert'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/shared/components/ui/card'
 import { Separator } from '@/shared/components/ui/separator'
+import { agruparPorDia, rotuloDoDia } from '@/shared/data/extrato'
 import type { Categoria, FiltroDeGastos, Gasto } from '@/shared/data/model'
-import { formatDate, formatMoney } from '@/shared/i18n/format'
+import { formatMoney } from '@/shared/i18n/format'
+import { periodoDe, type Atalho, type PeriodoEscolhido } from '@/shared/utils/datas'
 import { somar } from '@/shared/utils/dinheiro'
 import { listarCategorias, listarGastos } from './supabase'
-import { periodoDe, type Atalho, type PeriodoEscolhido } from './periodo'
 import { DialogoDeGasto } from './components/DialogoDeGasto'
 import { DialogoDeRemocaoDeGasto } from './components/DialogoDeRemocaoDeGasto'
 import { FiltrosDeGastos } from './components/FiltrosDeGastos'
 import { LinhaDeGasto } from './components/LinhaDeGasto'
 
-/** O recorte com que a tela abre: o mês corrente — ver `./periodo.ts`. */
+/** O recorte com que a tela abre: o mês corrente — ver `shared/utils/datas.ts`. */
 const ATALHO_INICIAL: Atalho = 'esteMes'
 
 /**
@@ -122,7 +123,10 @@ export function GastosPage() {
   // pessoa faz na calculadora. Ver `shared/utils/dinheiro.ts`.
   const total = useMemo(() => somar(gastos.map((gasto) => gasto.valorEmBrl)), [gastos])
 
-  const dias = useMemo(() => agruparPorDia(gastos), [gastos])
+  const dias = useMemo(
+    () => agruparPorDia(gastos, (gasto) => gasto.ocorreuEm, (gasto) => gasto.valorEmBrl),
+    [gastos],
+  )
 
   return (
     <>
@@ -205,7 +209,7 @@ export function GastosPage() {
                     </header>
                     <Separator />
                     <ul>
-                      {dia.gastos.map((gasto) => (
+                      {dia.lancamentos.map((gasto) => (
                         <LinhaDeGasto
                           key={gasto.id}
                           gasto={gasto}
@@ -274,56 +278,4 @@ function EstadoVazio({ onCriar }: { onCriar: () => void }) {
       </Button>
     </div>
   )
-}
-
-interface DiaDeGastos {
-  /** `YYYY-MM-DD`, no fuso de quem está olhando. */
-  data: string
-  total: number
-  gastos: Gasto[]
-}
-
-/**
- * Os gastos agrupados por dia, preservando a ordem que veio do banco (do mais
- * recente para o mais antigo).
- *
- * A chave é a data **local**, e não `ocorreuEm.slice(0, 10)`: a string do banco
- * vem em UTC, e um gasto das 22h em Brasília cairia no dia seguinte — apareceria
- * sob um cabeçalho de amanhã, e o total daquele dia sairia errado.
- */
-function agruparPorDia(gastos: Gasto[]): DiaDeGastos[] {
-  const dias: DiaDeGastos[] = []
-
-  for (const gasto of gastos) {
-    const data = new Date(gasto.ocorreuEm)
-    const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(
-      data.getDate(),
-    ).padStart(2, '0')}`
-
-    // A lista já chega ordenada, então o dia corrente é sempre o último criado:
-    // basta olhar o fim, sem Map nem reordenação depois.
-    const atual = dias[dias.length - 1]
-    if (atual?.data === chave) atual.gastos.push(gasto)
-    else dias.push({ data: chave, total: 0, gastos: [gasto] })
-  }
-
-  // O total de cada dia sai de `somar`, depois de o grupo estar fechado — somar
-  // com `+=` dentro do laço acumularia o erro de ponto flutuante que `somar`
-  // existe para evitar.
-  for (const dia of dias) {
-    dia.total = somar(dia.gastos.map((gasto) => gasto.valorEmBrl))
-  }
-
-  return dias
-}
-
-/** `2026-08-26` → "26 de agosto de 2026" (ou o equivalente no idioma ativo). */
-function rotuloDoDia(data: string): string {
-  const [ano, mes, dia] = data.split('-').map(Number)
-  return formatDate(new Date(ano, mes - 1, dia), {
-    weekday: 'short',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  })
 }

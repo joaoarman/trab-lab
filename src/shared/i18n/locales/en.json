@@ -12,7 +12,7 @@
     "expenses": "Expenses",
     "expensesSubtitle": "Everything that went out, by category and period",
     "income": "Income",
-    "incomeSubtitle": "Everything that came in, by category and period",
+    "incomeSubtitle": "Everything that came in, by period",
     "categories": "Categories",
     "categoriesSubtitle": "Your category and subcategory hierarchy",
     "log": "AI log",
@@ -120,16 +120,8 @@
       "action": "Log an expense"
     },
     "filters": {
-      "period": "Period",
-      "from": "From",
-      "to": "To",
       "category": "Category",
-      "allCategories": "All categories",
-      "esteMes": "This month",
-      "mesPassado": "Last month",
-      "ultimos30": "Last 30 days",
-      "esteAno": "This year",
-      "custom": "Custom"
+      "allCategories": "All categories"
     },
     "list": {
       "actions": "Actions for {{name}}",
@@ -141,13 +133,6 @@
       "editTitle": "Edit expense",
       "name": "What it was",
       "namePlaceholder": "e.g. petrol station",
-      "amount": "Amount",
-      "amountPlaceholder": "0.00",
-      "currency": "Currency",
-      "rate": "{{currency}} rate (in reais)",
-      "refreshRate": "Fetch the current rate",
-      "rateFailed": "We couldn't fetch the exchange rate. Type it in by hand to carry on.",
-      "preview": "Comes to {{value}}",
       "category": "Category",
       "noCategory": "No category",
       "occurredAt": "When it happened",
@@ -169,10 +154,45 @@
     }
   },
   "income": {
-    "placeholder": {
-      "step1": "Income table tied to the profile, with owner RLS",
-      "step2": "List filtered by period and by category (subcategories included)",
-      "step3": "Create, edit and delete an income entry from the screen"
+    "page": {
+      "count_one": "{{count}} income entry in this period",
+      "count_other": "{{count}} income entries in this period",
+      "new": "New income",
+      "loadFailed": "Could not load your income.",
+      "retry": "Try again"
+    },
+    "empty": {
+      "title": "No income here",
+      "description": "Nothing was recorded in this period. Change the range above to look at another date — or log an income entry now. In the chat, just write \"got 3000 from my salary\".",
+      "action": "Log an income entry"
+    },
+    "list": {
+      "registeredAt": "recorded on {{date}}",
+      "actions": "Actions for {{name}}",
+      "edit": "Edit",
+      "remove": "Delete"
+    },
+    "form": {
+      "createTitle": "New income",
+      "editTitle": "Edit income",
+      "name": "Where it came from",
+      "namePlaceholder": "e.g. salary",
+      "receivedAt": "When it came in",
+      "registeredAt": "Recorded on {{date}}",
+      "created": "Income recorded",
+      "saved": "Income saved"
+    },
+    "remove": {
+      "title": "Delete {{name}}?",
+      "description": "{{value}} on {{date}}. The income leaves the list and stops counting towards your totals.",
+      "confirm": "Delete",
+      "done": "Income deleted"
+    },
+    "errors": {
+      "cotacaoObrigatoria": "Enter the exchange rate for income in a foreign currency.",
+      "valorForaDeFaixa": "Amount outside the accepted range. Check what you typed.",
+      "naoEncontrada": "This income entry no longer exists. Reload the screen.",
+      "desconhecido": "Could not finish. Try again."
     }
   },
   "categories": {
@@ -314,5 +334,24 @@
       "senhasNaoConferem": "The passwords don't match.",
       "emailAguardandoConfirmacao": "The change is pending email confirmation. You still sign in with the old address."
     }
+  },
+  "period": {
+    "label": "Period",
+    "from": "From",
+    "to": "To",
+    "esteMes": "This month",
+    "mesPassado": "Last month",
+    "ultimos30": "Last 30 days",
+    "esteAno": "This year",
+    "custom": "Custom"
+  },
+  "money": {
+    "amount": "Amount",
+    "amountPlaceholder": "0.00",
+    "currency": "Currency",
+    "rate": "{{currency}} rate (in reais)",
+    "refreshRate": "Fetch the current rate",
+    "rateFailed": "We couldn't fetch the exchange rate. Type it in by hand to carry on.",
+    "preview": "Comes to {{value}}"
   }
 }

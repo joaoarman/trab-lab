@@ -203,6 +203,84 @@ comment on column public.expense.occurred_at      is 'Quando o gasto ACONTECEU (
 comment on column public.expense.is_active        is 'Hoje só acompanha o deleted_at (excluído ⇒ inativo). Reservada para um "arquivar" futuro.';
 comment on column public.expense.deleted_at       is 'Soft-delete. Preenchida = excluído (a RLS deixa de devolver a linha). Força is_active = false.';
 
+-- -------------------------------------------------------------------------
+-- income — as receitas do usuário: o dinheiro que entrou.
+-- SEM CATEGORIA, de propósito: gasto se pergunta "em quê?" (e a resposta é uma
+-- árvore inteira, com dezenas de linhas por mês); receita se pergunta "de
+-- onde?", e a resposta cabe no nome — salário, freela, aluguel. Classificar três
+-- linhas por mês numa hierarquia é fricção sem retorno (regra 6).
+-- DUAS DATAS, e as duas aparecem na tela: `received_at` (quando o dinheiro
+-- entrou, editável, ordena a lista) e `created_at` (quando a linha foi criada).
+-- Em `expense` a segunda fica só no banco; aqui ela é LIDA.
+-- Dinheiro é `numeric(12,2)` e quem converte para reais é a trigger
+-- income_guard() — o cliente não tem grant em amount_brl. Excluir é
+-- SOFT-DELETE. Ver functions.sql (income_guard, income_remove).
+-- -------------------------------------------------------------------------
+create table if not exists public.income (
+  id         int generated always as identity primary key,
+  -- Dona. O DEFAULT é o que permite o front inserir sem mencionar o profile_id —
+  -- ele não tem grant nesta coluna, então não pode forjar o dono.
+  profile_id int not null default public.current_profile_id()
+             references public.profile (id) on delete cascade,
+  -- De onde veio o dinheiro ("salário", "freela do site"). É o ÚNICO descritor:
+  -- sem categoria, este campo carrega sozinho o que a hierarquia carrega no gasto.
+  name       text not null,
+  -- Valor na moeda de `currency`. US$ 500,00 = 500.00. numeric, nunca float: em
+  -- ponto flutuante 0.1 + 0.2 não dá 0.3, e o extrato deixa de fechar.
+  amount     numeric(12,2) not null,
+  -- Mesmo enum de expense, de propósito: gasto e receita falam da mesma moeda, e
+  -- um segundo enum faria o Chat ter de escolher qual usar ao ler "recebi 500
+  -- dólares".
+  currency   public.currency not null default 'BRL',
+  -- Taxa de câmbio do MOMENTO do registro: quantos reais vale 1 unidade de
+  -- `currency`. Null quando já é BRL. Guardada (e não recalculada na leitura)
+  -- porque cotação é fato datado — senão o extrato muda de valor toda manhã.
+  exchange_rate numeric(14,6),
+  -- O mesmo valor em REAIS. Preenchido SÓ pela trigger.
+  amount_brl numeric(12,2) not null default 0,
+  -- Quando o dinheiro ENTROU (com hora) — não quando foi registrado: dá para
+  -- lançar na segunda o salário que caiu na sexta.
+  received_at timestamptz not null default now(),
+  -- Hoje só acompanha o deleted_at. Reservada para um "arquivar" futuro.
+  is_active  boolean not null default true,
+  -- Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha).
+  deleted_at timestamptz,
+  -- Quando a receita foi REGISTRADA. Diferente de expense, esta coluna é LIDA
+  -- pela tela — e por isso fica fora do grant de escrita (ver grants.sql).
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint income_name_len check (char_length(name) between 1 and 80),
+  -- Receita é sempre positiva (negativa seria gasto, que tem tabela própria). O
+  -- piso é UM CENTAVO: `> 0` deixaria passar 0.001, arredondado para zero pela
+  -- escala. O teto repete o do numeric de propósito — assim a conversão esbarra
+  -- numa mensagem traduzível, e não no "numeric field overflow" cru.
+  constraint income_amount_range     check (amount     between 0.01 and 9999999.99),
+  constraint income_amount_brl_range check (amount_brl between 0.01 and 9999999.99),
+  -- A coerência do trio (moeda · cotação · valor em reais) como GARANTIA, e não
+  -- só como código da trigger: um UPDATE manual esbarra aqui.
+  constraint income_brl_has_no_rate check (
+    currency <> 'BRL' or (exchange_rate is null and amount_brl = amount)
+  ),
+  constraint income_foreign_has_rate check (
+    currency = 'BRL' or (exchange_rate is not null and exchange_rate > 0)
+  ),
+  -- Excluída é sempre inativa — o mesmo invariante de `expense` e `category`.
+  constraint income_deleted_is_inactive check (deleted_at is null or is_active = false)
+);
+
+comment on table  public.income               is 'Receitas do usuário: o dinheiro que entrou. Sem categoria — o nome basta.';
+comment on column public.income.profile_id    is 'Dona. Preenchido pelo DEFAULT current_profile_id() — o cliente não tem grant nesta coluna.';
+comment on column public.income.name          is 'De onde veio o dinheiro ("salário", "freela do site"). É o único descritor: receita não tem categoria.';
+comment on column public.income.amount        is 'Valor na moeda de currency, numeric(12,2). US$ 500,00 = 500.00. numeric, nunca float: a soma tem de fechar.';
+comment on column public.income.currency      is 'Moeda em que a receita entrou. Padrão BRL. Mesmo enum de expense, de propósito.';
+comment on column public.income.exchange_rate is 'Taxa de câmbio do momento do registro: quantos reais vale 1 unidade de currency. Null quando currency = BRL.';
+comment on column public.income.amount_brl    is 'O mesmo valor em REAIS. Calculado pela trigger — é a coluna que todo total do sistema soma.';
+comment on column public.income.received_at   is 'Quando o dinheiro ENTROU (com hora) — não quando foi registrado. Dá para lançar na segunda o salário da sexta.';
+comment on column public.income.is_active     is 'Hoje só acompanha o deleted_at (excluída ⇒ inativa). Reservada para um "arquivar" futuro.';
+comment on column public.income.deleted_at    is 'Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha). Força is_active = false.';
+comment on column public.income.created_at    is 'Quando a receita foi REGISTRADA. Diferente de expense, esta coluna é LIDA pela tela.';
+
 -- ############ 4. INDEXES ############
 -- --- public.category -----------------------------------------------------
 
@@ -245,6 +323,18 @@ create index if not exists expense_profile_occurred_idx
 -- decide se uma categoria pode ser excluída) — as duas percorrem por category_id.
 create index if not exists expense_category_idx
   on public.expense (category_id)
+  where deleted_at is null;
+
+-- --- public.income -------------------------------------------------------
+
+-- A leitura da tela e a do Chat: "as receitas deste perfil, neste período, da
+-- mais recente para a mais antiga". As colunas na ordem em que a query as usa.
+--
+-- É o ÚNICO índice do módulo, e a ausência do segundo é a diferença de Gastos:
+-- lá existe `expense_category_idx` porque a tela filtra por categoria e porque
+-- `category_linked_records` conta por categoria. Receita não tem categoria.
+create index if not exists income_profile_received_idx
+  on public.income (profile_id, received_at desc)
   where deleted_at is null;
 
 -- ############ 5. FUNCTIONS ############
@@ -547,10 +637,12 @@ $$;
 -- EXCLUÍDA ou só DESATIVADA. Uma categoria com gasto vinculado nunca é excluída:
 -- o histórico financeiro não pode ficar apontando para o vazio.
 --
--- `income` entra aqui do mesmo jeito quando o módulo de Receitas for feito:
---     + (select count(*) from public.income i
---         where i.category_id = any (p_category_ids) and i.deleted_at is null)
--- e mais nada — nem no banco, nem na tela, nem nos textos da modal.
+-- SÓ GASTOS ENTRAM NESTA CONTA, e assim fica: a migration de Receitas
+-- (20260826170132) decidiu que `income` NÃO tem categoria — receita se pergunta
+-- "de onde?", e a resposta cabe no nome. Sem `category_id` na `income` não
+-- existe vínculo a contar, e somar zero seria um JOIN a mais em toda exclusão de
+-- categoria. (A migration de Gastos previa o contrário; o comentário de lá é
+-- histórico e não se edita — forward-only.)
 --
 -- `deleted_at is null` no filtro: um gasto EXCLUÍDO não é vínculo. Se contasse,
 -- uma categoria usada uma única vez, num gasto já apagado, nunca mais poderia
@@ -855,6 +947,105 @@ begin
 end;
 $$;
 
+-- --- public.income --------------------------------------------------------
+
+-- -------------------------------------------------------------------------
+-- income_guard — a guarda de escrita da receita. É aqui que a CONVERSÃO
+-- acontece: o cliente manda valor, moeda e cotação, e esta função calcula os
+-- reais. O cálculo não mora no front-end porque `amount_brl` é a coluna que
+-- todos os totais somam — bastaria uma aba antiga aberta ou uma chamada direta
+-- à API REST para o extrato passar a mentir de um jeito invisível.
+--
+-- Ao contrário de `expense_guard`, NÃO consulta nenhuma outra tabela: sem
+-- categoria, não há dono a conferir além do que a RLS já garante. Continua
+-- `security definer` com search_path fixo por higiene — uma trigger não deve
+-- depender do search_path de quem disparou a escrita.
+-- -------------------------------------------------------------------------
+create or replace function public.income_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_brl numeric;
+begin
+  new.name       := trim(new.name);
+  new.updated_at := now();
+
+  -- Excluída é sempre inativa. Escrito aqui (e não deixado para quem chama) para
+  -- que não exista caminho — RPC, SQL Editor, script futuro — capaz de gravar
+  -- uma linha excluída que ainda se diz ativa.
+  if new.deleted_at is not null then
+    new.is_active := false;
+  end if;
+
+  if new.currency = 'BRL' then
+    -- Já é real: não há cotação a guardar. Zeramos em vez de recusar quem a
+    -- mandou — trocar de USD para BRL no formulário não pode exigir que a tela
+    -- saiba limpar o campo.
+    new.exchange_rate := null;
+    new.amount_brl    := new.amount;
+  else
+    if new.exchange_rate is null or new.exchange_rate <= 0 then
+      raise exception 'income_rate_required'
+        using errcode = 'P0001',
+              hint = 'Receita em moeda estrangeira exige a cotacao.';
+    end if;
+
+    -- `round(x, 2)` explícito: o produto de um valor de 2 casas por uma cotação
+    -- de 6 tem 8 casas decimais, e é aqui que ele vira centavo. O teste de faixa
+    -- vem ANTES de a linha chegar na coluna — é o que troca o "numeric field
+    -- overflow" cru por uma mensagem que a tela sabe traduzir.
+    v_brl := round(new.amount * new.exchange_rate, 2);
+
+    if v_brl < 0.01 or v_brl > 9999999.99 then
+      raise exception 'income_amount_out_of_range'
+        using errcode = 'P0001',
+              hint = 'O valor convertido nao cabe no limite da coluna.';
+    end if;
+
+    new.amount_brl := v_brl;
+  end if;
+
+  return new;
+end;
+$$;
+
+-- -------------------------------------------------------------------------
+-- income_remove — o soft-delete da receita.
+--
+-- É uma RPC, e não um `update` do cliente, porque o cliente não tem grant em
+-- `deleted_at`: com grant, o mesmo update que exclui poderia RESSUSCITAR a
+-- receita zerando a coluna, e a exclusão viraria uma sugestão.
+--
+-- Como em `expense_remove`, não há decisão a tomar: nada se pendura numa
+-- receita, então excluir sempre exclui.
+-- -------------------------------------------------------------------------
+create or replace function public.income_remove(p_income_id int)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_perfil int := public.current_profile_id();
+begin
+  update public.income
+     set deleted_at = now()
+   where id = p_income_id
+     and profile_id = v_perfil
+     and deleted_at is null;
+
+  -- Nenhuma linha tocada = não existe, já foi excluída OU é de outra pessoa. A
+  -- mensagem é a mesma nos três casos, de propósito: distinguir "não existe" de
+  -- "não é sua" confirmaria a existência de um id alheio.
+  if not found then
+    raise exception 'income_not_found' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
 -- ############ 6. TRIGGERS ############
 -- --- auth.users ----------------------------------------------------------
 
@@ -904,6 +1095,15 @@ drop trigger if exists on_expense_before_write on public.expense;
 create trigger on_expense_before_write
   before insert or update on public.expense
   for each row execute function public.expense_guard();
+
+-- --- public.income --------------------------------------------------------
+
+-- Normaliza o nome, aplica "excluída é sempre inativa" e — o principal —
+-- CALCULA o valor em reais a partir do valor e da cotação.
+drop trigger if exists on_income_before_write on public.income;
+create trigger on_income_before_write
+  before insert or update on public.income
+  for each row execute function public.income_guard();
 
 -- ############ 7. VIEWS ############
 -- (nenhuma)
@@ -973,6 +1173,31 @@ create policy expense_update_own on public.expense
 
 -- Sem policy de DELETE, de propósito: a saída é o soft-delete de
 -- `expense_remove()`. Um DELETE de verdade levaria o histórico embora, e um
+-- extrato que perde linhas para sempre não fecha com o mês anterior.
+
+-- --- public.income -------------------------------------------------------
+alter table public.income enable row level security;
+
+-- `deleted_at is null` nas policies, e não só nas queries do front: "excluída
+-- sumiu" é garantia do BANCO, não convenção que a próxima tela pode esquecer.
+drop policy if exists income_select_own on public.income;
+create policy income_select_own on public.income
+  for select to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null);
+
+drop policy if exists income_insert_own on public.income;
+create policy income_insert_own on public.income
+  for insert to authenticated
+  with check (profile_id = public.current_profile_id());
+
+drop policy if exists income_update_own on public.income;
+create policy income_update_own on public.income
+  for update to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null)
+  with check (profile_id = public.current_profile_id());
+
+-- Sem policy de DELETE, de propósito: a saída é o soft-delete de
+-- `income_remove()`. Um DELETE de verdade levaria o histórico embora, e um
 -- extrato que perde linhas para sempre não fecha com o mês anterior.
 
 -- ############ 9. GRANTS ############
@@ -1053,6 +1278,31 @@ revoke execute on function public.expense_guard() from public, anon, authenticat
 -- O que a tela chama: só quem está logado.
 revoke execute on function public.expense_remove(int) from public, anon;
 grant  execute on function public.expense_remove(int) to authenticated;
+
+-- --- public.income -------------------------------------------------------
+-- Os mesmos dois recortes de `expense` — `amount_brl` fora do grant torna a
+-- conversão da trigger inescapável; `is_active`/`deleted_at` fora dele fazem de
+-- `income_remove()` a única saída — mais um terceiro, próprio deste módulo:
+--
+--   • `created_at` fora do grant. A tela de Receitas EXIBE "registrada em". Com
+--     grant de escrita, o cliente poderia antedatar o próprio registro, e a
+--     coluna que existe para dizer quando a linha entrou no sistema deixaria de
+--     servir para isso.
+--
+-- `profile_id` também fica de fora: quem o preenche é o DEFAULT.
+revoke all on public.income from anon, authenticated;
+grant select on public.income to authenticated;
+grant insert (name, amount, currency, exchange_rate, received_at)
+      on public.income to authenticated;
+grant update (name, amount, currency, exchange_rate, received_at)
+      on public.income to authenticated;
+
+-- Função de trigger: ninguém chama à mão.
+revoke execute on function public.income_guard() from public, anon, authenticated;
+
+-- O que a tela chama: só quem está logado.
+revoke execute on function public.income_remove(int) from public, anon;
+grant  execute on function public.income_remove(int) to authenticated;
 
 -- ############ 10. REALTIME ############
 -- (nada publicado no realtime)

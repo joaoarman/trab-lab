@@ -155,3 +155,81 @@ comment on column public.expense.amount_brl       is 'O mesmo valor em REAIS. Ca
 comment on column public.expense.occurred_at      is 'Quando o gasto ACONTECEU (com hora) — não quando foi registrado. Dá para lançar hoje o almoço de ontem.';
 comment on column public.expense.is_active        is 'Hoje só acompanha o deleted_at (excluído ⇒ inativo). Reservada para um "arquivar" futuro.';
 comment on column public.expense.deleted_at       is 'Soft-delete. Preenchida = excluído (a RLS deixa de devolver a linha). Força is_active = false.';
+
+-- -------------------------------------------------------------------------
+-- income — as receitas do usuário: o dinheiro que entrou.
+-- SEM CATEGORIA, de propósito: gasto se pergunta "em quê?" (e a resposta é uma
+-- árvore inteira, com dezenas de linhas por mês); receita se pergunta "de
+-- onde?", e a resposta cabe no nome — salário, freela, aluguel. Classificar três
+-- linhas por mês numa hierarquia é fricção sem retorno (regra 6).
+-- DUAS DATAS, e as duas aparecem na tela: `received_at` (quando o dinheiro
+-- entrou, editável, ordena a lista) e `created_at` (quando a linha foi criada).
+-- Em `expense` a segunda fica só no banco; aqui ela é LIDA.
+-- Dinheiro é `numeric(12,2)` e quem converte para reais é a trigger
+-- income_guard() — o cliente não tem grant em amount_brl. Excluir é
+-- SOFT-DELETE. Ver functions.sql (income_guard, income_remove).
+-- -------------------------------------------------------------------------
+create table if not exists public.income (
+  id         int generated always as identity primary key,
+  -- Dona. O DEFAULT é o que permite o front inserir sem mencionar o profile_id —
+  -- ele não tem grant nesta coluna, então não pode forjar o dono.
+  profile_id int not null default public.current_profile_id()
+             references public.profile (id) on delete cascade,
+  -- De onde veio o dinheiro ("salário", "freela do site"). É o ÚNICO descritor:
+  -- sem categoria, este campo carrega sozinho o que a hierarquia carrega no gasto.
+  name       text not null,
+  -- Valor na moeda de `currency`. US$ 500,00 = 500.00. numeric, nunca float: em
+  -- ponto flutuante 0.1 + 0.2 não dá 0.3, e o extrato deixa de fechar.
+  amount     numeric(12,2) not null,
+  -- Mesmo enum de expense, de propósito: gasto e receita falam da mesma moeda, e
+  -- um segundo enum faria o Chat ter de escolher qual usar ao ler "recebi 500
+  -- dólares".
+  currency   public.currency not null default 'BRL',
+  -- Taxa de câmbio do MOMENTO do registro: quantos reais vale 1 unidade de
+  -- `currency`. Null quando já é BRL. Guardada (e não recalculada na leitura)
+  -- porque cotação é fato datado — senão o extrato muda de valor toda manhã.
+  exchange_rate numeric(14,6),
+  -- O mesmo valor em REAIS. Preenchido SÓ pela trigger.
+  amount_brl numeric(12,2) not null default 0,
+  -- Quando o dinheiro ENTROU (com hora) — não quando foi registrado: dá para
+  -- lançar na segunda o salário que caiu na sexta.
+  received_at timestamptz not null default now(),
+  -- Hoje só acompanha o deleted_at. Reservada para um "arquivar" futuro.
+  is_active  boolean not null default true,
+  -- Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha).
+  deleted_at timestamptz,
+  -- Quando a receita foi REGISTRADA. Diferente de expense, esta coluna é LIDA
+  -- pela tela — e por isso fica fora do grant de escrita (ver grants.sql).
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint income_name_len check (char_length(name) between 1 and 80),
+  -- Receita é sempre positiva (negativa seria gasto, que tem tabela própria). O
+  -- piso é UM CENTAVO: `> 0` deixaria passar 0.001, arredondado para zero pela
+  -- escala. O teto repete o do numeric de propósito — assim a conversão esbarra
+  -- numa mensagem traduzível, e não no "numeric field overflow" cru.
+  constraint income_amount_range     check (amount     between 0.01 and 9999999.99),
+  constraint income_amount_brl_range check (amount_brl between 0.01 and 9999999.99),
+  -- A coerência do trio (moeda · cotação · valor em reais) como GARANTIA, e não
+  -- só como código da trigger: um UPDATE manual esbarra aqui.
+  constraint income_brl_has_no_rate check (
+    currency <> 'BRL' or (exchange_rate is null and amount_brl = amount)
+  ),
+  constraint income_foreign_has_rate check (
+    currency = 'BRL' or (exchange_rate is not null and exchange_rate > 0)
+  ),
+  -- Excluída é sempre inativa — o mesmo invariante de `expense` e `category`.
+  constraint income_deleted_is_inactive check (deleted_at is null or is_active = false)
+);
+
+comment on table  public.income               is 'Receitas do usuário: o dinheiro que entrou. Sem categoria — o nome basta.';
+comment on column public.income.profile_id    is 'Dona. Preenchido pelo DEFAULT current_profile_id() — o cliente não tem grant nesta coluna.';
+comment on column public.income.name          is 'De onde veio o dinheiro ("salário", "freela do site"). É o único descritor: receita não tem categoria.';
+comment on column public.income.amount        is 'Valor na moeda de currency, numeric(12,2). US$ 500,00 = 500.00. numeric, nunca float: a soma tem de fechar.';
+comment on column public.income.currency      is 'Moeda em que a receita entrou. Padrão BRL. Mesmo enum de expense, de propósito.';
+comment on column public.income.exchange_rate is 'Taxa de câmbio do momento do registro: quantos reais vale 1 unidade de currency. Null quando currency = BRL.';
+comment on column public.income.amount_brl    is 'O mesmo valor em REAIS. Calculado pela trigger — é a coluna que todo total do sistema soma.';
+comment on column public.income.received_at   is 'Quando o dinheiro ENTROU (com hora) — não quando foi registrado. Dá para lançar na segunda o salário da sexta.';
+comment on column public.income.is_active     is 'Hoje só acompanha o deleted_at (excluída ⇒ inativa). Reservada para um "arquivar" futuro.';
+comment on column public.income.deleted_at    is 'Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha). Força is_active = false.';
+comment on column public.income.created_at    is 'Quando a receita foi REGISTRADA. Diferente de expense, esta coluna é LIDA pela tela.';

@@ -85,3 +85,28 @@ revoke execute on function public.expense_guard() from public, anon, authenticat
 -- O que a tela chama: só quem está logado.
 revoke execute on function public.expense_remove(int) from public, anon;
 grant  execute on function public.expense_remove(int) to authenticated;
+
+-- --- public.income -------------------------------------------------------
+-- Os mesmos dois recortes de `expense` — `amount_brl` fora do grant torna a
+-- conversão da trigger inescapável; `is_active`/`deleted_at` fora dele fazem de
+-- `income_remove()` a única saída — mais um terceiro, próprio deste módulo:
+--
+--   • `created_at` fora do grant. A tela de Receitas EXIBE "registrada em". Com
+--     grant de escrita, o cliente poderia antedatar o próprio registro, e a
+--     coluna que existe para dizer quando a linha entrou no sistema deixaria de
+--     servir para isso.
+--
+-- `profile_id` também fica de fora: quem o preenche é o DEFAULT.
+revoke all on public.income from anon, authenticated;
+grant select on public.income to authenticated;
+grant insert (name, amount, currency, exchange_rate, received_at)
+      on public.income to authenticated;
+grant update (name, amount, currency, exchange_rate, received_at)
+      on public.income to authenticated;
+
+-- Função de trigger: ninguém chama à mão.
+revoke execute on function public.income_guard() from public, anon, authenticated;
+
+-- O que a tela chama: só quem está logado.
+revoke execute on function public.income_remove(int) from public, anon;
+grant  execute on function public.income_remove(int) to authenticated;

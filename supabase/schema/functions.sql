@@ -303,10 +303,12 @@ $$;
 -- EXCLUÍDA ou só DESATIVADA. Uma categoria com gasto vinculado nunca é excluída:
 -- o histórico financeiro não pode ficar apontando para o vazio.
 --
--- `income` entra aqui do mesmo jeito quando o módulo de Receitas for feito:
---     + (select count(*) from public.income i
---         where i.category_id = any (p_category_ids) and i.deleted_at is null)
--- e mais nada — nem no banco, nem na tela, nem nos textos da modal.
+-- SÓ GASTOS ENTRAM NESTA CONTA, e assim fica: a migration de Receitas
+-- (20260826170132) decidiu que `income` NÃO tem categoria — receita se pergunta
+-- "de onde?", e a resposta cabe no nome. Sem `category_id` na `income` não
+-- existe vínculo a contar, e somar zero seria um JOIN a mais em toda exclusão de
+-- categoria. (A migration de Gastos previa o contrário; o comentário de lá é
+-- histórico e não se edita — forward-only.)
 --
 -- `deleted_at is null` no filtro: um gasto EXCLUÍDO não é vínculo. Se contasse,
 -- uma categoria usada uma única vez, num gasto já apagado, nunca mais poderia
@@ -611,6 +613,106 @@ begin
   -- existe" de "não é seu" confirmaria a existência de um id alheio.
   if not found then
     raise exception 'expense_not_found' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
+
+-- --- public.income --------------------------------------------------------
+
+-- -------------------------------------------------------------------------
+-- income_guard — a guarda de escrita da receita. É aqui que a CONVERSÃO
+-- acontece: o cliente manda valor, moeda e cotação, e esta função calcula os
+-- reais. O cálculo não mora no front-end porque `amount_brl` é a coluna que
+-- todos os totais somam — bastaria uma aba antiga aberta ou uma chamada direta
+-- à API REST para o extrato passar a mentir de um jeito invisível.
+--
+-- Ao contrário de `expense_guard`, NÃO consulta nenhuma outra tabela: sem
+-- categoria, não há dono a conferir além do que a RLS já garante. Continua
+-- `security definer` com search_path fixo por higiene — uma trigger não deve
+-- depender do search_path de quem disparou a escrita.
+-- -------------------------------------------------------------------------
+create or replace function public.income_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_brl numeric;
+begin
+  new.name       := trim(new.name);
+  new.updated_at := now();
+
+  -- Excluída é sempre inativa. Escrito aqui (e não deixado para quem chama) para
+  -- que não exista caminho — RPC, SQL Editor, script futuro — capaz de gravar
+  -- uma linha excluída que ainda se diz ativa.
+  if new.deleted_at is not null then
+    new.is_active := false;
+  end if;
+
+  if new.currency = 'BRL' then
+    -- Já é real: não há cotação a guardar. Zeramos em vez de recusar quem a
+    -- mandou — trocar de USD para BRL no formulário não pode exigir que a tela
+    -- saiba limpar o campo.
+    new.exchange_rate := null;
+    new.amount_brl    := new.amount;
+  else
+    if new.exchange_rate is null or new.exchange_rate <= 0 then
+      raise exception 'income_rate_required'
+        using errcode = 'P0001',
+              hint = 'Receita em moeda estrangeira exige a cotacao.';
+    end if;
+
+    -- `round(x, 2)` explícito: o produto de um valor de 2 casas por uma cotação
+    -- de 6 tem 8 casas decimais, e é aqui que ele vira centavo. O teste de faixa
+    -- vem ANTES de a linha chegar na coluna — é o que troca o "numeric field
+    -- overflow" cru por uma mensagem que a tela sabe traduzir.
+    v_brl := round(new.amount * new.exchange_rate, 2);
+
+    if v_brl < 0.01 or v_brl > 9999999.99 then
+      raise exception 'income_amount_out_of_range'
+        using errcode = 'P0001',
+              hint = 'O valor convertido nao cabe no limite da coluna.';
+    end if;
+
+    new.amount_brl := v_brl;
+  end if;
+
+  return new;
+end;
+$$;
+
+-- -------------------------------------------------------------------------
+-- income_remove — o soft-delete da receita.
+--
+-- É uma RPC, e não um `update` do cliente, porque o cliente não tem grant em
+-- `deleted_at`: com grant, o mesmo update que exclui poderia RESSUSCITAR a
+-- receita zerando a coluna, e a exclusão viraria uma sugestão.
+--
+-- Como em `expense_remove`, não há decisão a tomar: nada se pendura numa
+-- receita, então excluir sempre exclui.
+-- -------------------------------------------------------------------------
+create or replace function public.income_remove(p_income_id int)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_perfil int := public.current_profile_id();
+begin
+  update public.income
+     set deleted_at = now()
+   where id = p_income_id
+     and profile_id = v_perfil
+     and deleted_at is null;
+
+  -- Nenhuma linha tocada = não existe, já foi excluída OU é de outra pessoa. A
+  -- mensagem é a mesma nos três casos, de propósito: distinguir "não existe" de
+  -- "não é sua" confirmaria a existência de um id alheio.
+  if not found then
+    raise exception 'income_not_found' using errcode = 'P0001';
   end if;
 end;
 $$;
