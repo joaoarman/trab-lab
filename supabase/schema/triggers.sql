@@ -35,3 +35,11 @@ drop trigger if exists on_profile_before_update on public.profile;
 create trigger on_profile_before_update
   before update on public.profile
   for each row execute function public.profile_guard_and_touch();
+
+-- --- public.category ------------------------------------------------------
+
+-- Normaliza nome/cor, aplica "excluída é sempre inativa" e recusa ciclo na árvore.
+drop trigger if exists on_category_before_write on public.category;
+create trigger on_category_before_write
+  before insert or update on public.category
+  for each row execute function public.category_guard();

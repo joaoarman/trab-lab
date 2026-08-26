@@ -120,10 +120,81 @@
     }
   },
   "categories": {
-    "placeholder": {
-      "step1": "Tabela de categorias com auto-relacionamento (categoria pai)",
-      "step2": "Consulta recursiva que soma a categoria e todos os descendentes",
-      "step3": "Árvore navegável para criar, renomear e mover categorias"
+    "page": {
+      "count_one": "{{count}} categoria",
+      "count_other": "{{count}} categorias",
+      "new": "Nova categoria",
+      "collapseAll": "Fechar todas",
+      "expandAll": "Abrir todas",
+      "loadFailed": "Não foi possível carregar as categorias.",
+      "retry": "Tentar de novo"
+    },
+    "empty": {
+      "title": "Nenhuma categoria ainda",
+      "description": "Categorias organizam seus gastos e receitas numa hierarquia — Carro › Gasolina, Casa › Mercado › Feira. Crie a primeira aqui, ou deixe o chat criar sozinho quando você registrar um gasto.",
+      "action": "Criar a primeira",
+      "allInactive": "Todas as suas categorias estão desativadas. Traga alguma de volta abaixo, ou crie uma nova."
+    },
+    "tree": {
+      "label": "Suas categorias",
+      "collapse": "Fechar {{name}}",
+      "expand": "Abrir {{name}}",
+      "addChild": "Nova subcategoria em {{name}}",
+      "actions": "Ações de {{name}}",
+      "edit": "Editar",
+      "remove": "Excluir"
+    },
+    "form": {
+      "createTitle": "Nova categoria",
+      "createChildTitle": "Nova subcategoria",
+      "editTitle": "Editar categoria",
+      "atTopLevel": "Uma categoria de topo, sem categoria mãe.",
+      "inside": "Dentro de {{path}}.",
+      "name": "Nome",
+      "namePlaceholder": "Ex.: Gasolina",
+      "created": "Categoria criada",
+      "saved": "Categoria salva"
+    },
+    "color": {
+      "label": "Cor",
+      "pick": "Usar a cor {{hex}}",
+      "custom": "Escolher outra cor",
+      "customLabel": "Cor personalizada"
+    },
+    "remove": {
+      "title": "Excluir {{name}}?",
+      "checking": "Vendo o que está vinculado…",
+      "willDelete": "Nada está vinculado: será excluída de vez.",
+      "willDeleteHint": "Se houvesse subcategorias ou lançamentos, ela seria apenas desativada — e você poderia trazê-la de volta.",
+      "willDeactivate": "Não será excluída: será desativada.",
+      "becauseChildren_one": "{{count}} subcategoria vai junto",
+      "becauseChildren_other": "{{count}} subcategorias vão junto",
+      "becauseRecords_one": "{{count}} lançamento usa esta categoria",
+      "becauseRecords_other": "{{count}} lançamentos usam esta categoria",
+      "willDeactivateHint": "Ela vai para \"Desativadas\", e você pode trazê-la de volta quando quiser.",
+      "confirmDelete": "Excluir",
+      "confirmDeactivate": "Desativar",
+      "deleted": "Categoria excluída",
+      "deactivated": "Categoria desativada"
+    },
+    "inactive": {
+      "title": "Desativadas",
+      "count_one": "{{count}} categoria fora da árvore",
+      "count_other": "{{count}} categorias fora da árvore",
+      "description": "Categorias que não puderam ser excluídas por terem algo vinculado. Elas não somem: ficam aqui até você trazê-las de volta.",
+      "at": "Em {{path}}",
+      "atTopLevel": "Categoria de topo",
+      "withChildren_one": "com {{count}} subcategoria",
+      "withChildren_other": "com {{count}} subcategorias",
+      "reactivate": "Reativar",
+      "reactivated": "Categoria reativada"
+    },
+    "errors": {
+      "nomeDuplicado": "Já existe uma categoria com esse nome aqui. Se ela estiver desativada, traga-a de volta em \"Desativadas\".",
+      "maeExcluida": "A categoria mãe não existe mais. Recarregue a tela.",
+      "ciclo": "Uma categoria não pode ficar dentro de si mesma.",
+      "naoEncontrada": "Esta categoria não existe mais. Recarregue a tela.",
+      "desconhecido": "Não foi possível concluir. Tente de novo."
     }
   },
   "log": {

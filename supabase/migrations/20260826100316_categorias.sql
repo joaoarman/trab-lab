@@ -1,76 +1,96 @@
 -- =========================================================================
--- full_schema.sql — estado COMPLETO do banco, na ordem de execução.
--- Ordem: 1.extensions 2.enums 3.tables 4.indexes 5.functions 6.triggers
---        7.views 8.RLS+policies 9.grants 10.realtime 11.storage 12.seeds
--- Recria o banco do zero (mover de instância/país): copiar e colar no SQL Editor.
+-- 20260826100316_categorias.sql
+--
+-- A hierarquia de categorias do Self OS: a tabela `category` (auto-relacionada),
+-- a RLS por dono, as guardas de integridade da árvore e a regra de
+-- exclusão/desativação.
+--
+-- MODELO DE ACESSO: B2C por usuário. Toda categoria é de UM
+-- perfil, e cada pessoa só enxerga o que é seu. Quem garante isso é a RLS daqui
+-- — o front-end NÃO escreve o filtro por dono nas queries.
+--
+-- AS DECISÕES DESTA MIGRATION (o porquê de cada uma está no bloco que a implementa):
+--   • EXCLUIR é SOFT-DELETE: `deleted_at` preenchido. A linha sobrevive para o
+--     histórico financeiro não ficar apontando para o vazio, mas some da RLS —
+--     do ponto de vista do app, ela deixou de existir.
+--   • EXCLUÍDA É SEMPRE INATIVA: `deleted_at` preenchido força `is_active =
+--     false`, por trigger E por check constraint.
+--   • TER FILHA CONTA COMO VÍNCULO: uma categoria com descendentes (ou, no
+--     futuro, com gastos/receitas) não é excluída — é DESATIVADA, junto com toda
+--     a subárvore.
+--   • A DECISÃO É DO BANCO, não da tela: `category_remove()` recalcula tudo na
+--     hora de agir. A tela só pergunta antes (`category_impact()`) para escrever
+--     a frase certa na modal de confirmação.
+--
+-- Copiar e colar no SQL Editor do Supabase.
 -- =========================================================================
 
--- ############ 1. EXTENSIONS ############
--- (nenhuma além das que o Supabase já traz)
-
--- ############ 2. ENUMS ############
--- (nenhum — B2C monoperfil, sem coluna de papel)
-
--- ############ 3. TABLES ############
--- -------------------------------------------------------------------------
--- profile — o perfil do usuário, ponte entre auth.users e o resto do sistema.
--- Tenancy: B2C por usuário. Todo dado do sistema referencia profile.id (int).
--- -------------------------------------------------------------------------
-create table if not exists public.profile (
-  id          int generated always as identity primary key,
-  auth_uuid   uuid not null unique references auth.users (id) on delete cascade,
-  full_name   text not null default '',
-  -- Espelho de auth.users.email; escrito SÓ pelo trigger on_auth_user_email_updated.
-  email       text not null default '',
-  -- Caminho no bucket `avatars` ('<auth_uuid>/avatar.jpg'), NÃO uma URL.
-  avatar_path text,
-  -- Soft-delete. Null = ativa. Respeitado por current_profile_id().
-  deleted_at  timestamptz,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
-);
-
-comment on table  public.profile             is 'Perfil do usuário — a ponte entre auth.users e o resto do sistema.';
-comment on column public.profile.auth_uuid   is 'auth.users.id. Ligação com o Supabase Auth.';
-comment on column public.profile.email       is 'Espelho de auth.users.email. Escrito SÓ pelo trigger de sync.';
-comment on column public.profile.avatar_path is 'Caminho no bucket avatars (<auth_uuid>/avatar.jpg), não uma URL.';
-comment on column public.profile.deleted_at  is 'Soft-delete. Null = ativa. Preenchida = a sessão é derrubada.';
 
 -- -------------------------------------------------------------------------
--- category — a hierarquia de categorias (auto-relacionada), por perfil.
--- Excluir é SOFT-DELETE (deleted_at); excluída é sempre inativa. Ter filha (ou,
--- no futuro, lançamento) conta como vínculo: nesse caso a categoria é DESATIVADA
--- junto com a subárvore, em vez de excluída. Ver functions.sql (category_remove).
+-- 1. Tabela
 -- -------------------------------------------------------------------------
+-- Uma árvore de profundidade livre (`Carro › Gasolina`, `Casa › Mercado › Feira`),
+-- guardada do jeito clássico: cada linha aponta para a mãe. Sem mãe = categoria
+-- de topo.
 create table if not exists public.category (
   id         int generated always as identity primary key,
-  -- Dono. O DEFAULT é o que permite o front inserir sem mencionar o profile_id —
-  -- ele não tem grant nesta coluna, então não pode forjar o dono.
+
+  -- O dono. O DEFAULT é o que permite o front inserir sem nunca mencionar o
+  -- profile_id: ele não tem grant nesta coluna (ver seção 6), então não pode
+  -- forjar o dono nem por engano nem de propósito — quem preenche é o banco.
   profile_id int not null default public.current_profile_id()
              references public.profile (id) on delete cascade,
-  -- Categoria mãe. Null = topo. A FK real é composta (ver category_parent_fk).
+
+  -- A mãe. A FK real é COMPOSTA, lá embaixo — ver a nota em category_parent_fk.
   parent_id  int,
+
   name       text not null,
-  -- Etiqueta hexadecimal escolhida pelo usuário. É DADO, não tema (src/theme.css).
+
+  -- Cor de leitura da categoria, em hexadecimal ('#10b981').
+  --
+  -- Isto é DADO DO USUÁRIO, não identidade visual do sistema: a paleta, as
+  -- fontes e o raio do app vivem em src/theme.css e continuam vindo de lá. O que
+  -- se guarda aqui é a etiqueta que a pessoa escolheu para "Carro" ser verde e
+  -- "Casa" ser roxa — por isso é uma coluna, e não um token de tema.
   color      text not null default '#10b981',
-  -- False = desativada: sai da árvore principal, vai para o submenu "Desativadas".
+
+  -- Desativada: continua existindo, some da árvore principal e vai para o
+  -- submenu "Desativadas", de onde pode voltar. É o destino de quem NÃO pode ser
+  -- excluída por ter algo vinculado.
   is_active  boolean not null default true,
-  -- Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha).
+
+  -- Soft-delete. Null = existe. Preenchida = deixou de existir para o app (a RLS
+  -- da seção 5 nem devolve a linha).
   deleted_at timestamptz,
+
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
   constraint category_name_len   check (char_length(name) between 1 and 60),
+
+  -- Hexadecimal de 6 dígitos, minúsculo. O trigger normaliza antes de o check
+  -- rodar, então '#10B981' vindo de um <input type="color"> passa.
   constraint category_color_hex  check (color ~ '^#[0-9a-f]{6}$'),
-  -- O ciclo de tamanho 1; os maiores (A → B → A) são caçados por category_guard().
+
+  -- O ciclo de tamanho 1. Os ciclos maiores (A → B → A) são caçados pelo
+  -- trigger da seção 3, que uma constraint não consegue enxergar.
   constraint category_no_self_parent check (parent_id is distinct from id),
-  -- Excluída é sempre inativa — nem um UPDATE manual cria a linha ambígua.
+
+  -- EXCLUÍDA É SEMPRE INATIVA — a regra que evita o estado ambíguo "excluída,
+  -- mas ativa". O trigger já força isso ao gravar; este check é a garantia de
+  -- que nem um UPDATE manual no SQL Editor consegue criar a linha esquisita.
   constraint category_deleted_is_inactive check (deleted_at is null or is_active = false),
 
-  -- Alvo da FK composta abaixo. Redundante com a PK, de propósito.
+  -- Existe para ser o alvo da FK composta abaixo (uma FK precisa apontar para
+  -- uma chave única). É redundante com a PK, e de propósito.
   constraint category_id_profile_uk unique (id, profile_id),
-  -- profile_id NOS DOIS LADOS: a árvore não atravessa contas, e isso é garantido
-  -- por integridade referencial — não por uma policy que se pode esquecer.
+
+  -- A FK inclui o profile_id NOS DOIS LADOS. Sem isso, uma FK simples
+  -- (parent_id → id) aceitaria pendurar a minha categoria debaixo da SUA: eu não
+  -- consigo LER a sua linha por causa da RLS, mas o id é um inteiro pequeno e
+  -- chutá-lo é trivial. Com as duas colunas na FK, o banco exige que mãe e filha
+  -- sejam do mesmo perfil — a árvore não atravessa contas, e isso é garantido
+  -- por integridade referencial, não por uma policy que alguém pode esquecer.
   constraint category_parent_fk foreign key (parent_id, profile_id)
              references public.category (id, profile_id)
              on update cascade on delete cascade
@@ -83,182 +103,43 @@ comment on column public.category.color      is 'Etiqueta hexadecimal escolhida 
 comment on column public.category.is_active  is 'False = desativada: some da árvore principal e vai para o submenu "Desativadas". Só muda pelas RPCs.';
 comment on column public.category.deleted_at is 'Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha). Força is_active = false.';
 
--- ############ 4. INDEXES ############
--- --- public.category -----------------------------------------------------
+
+-- -------------------------------------------------------------------------
+-- 2. Índices
+-- -------------------------------------------------------------------------
 
 -- A leitura da tela: "todas as categorias vivas deste perfil".
 create index if not exists category_profile_idx
   on public.category (profile_id)
   where deleted_at is null;
 
--- A subida e a descida da árvore (o WITH RECURSIVE de category_subtree e a FK).
+-- A subida e a descida da árvore (o WITH RECURSIVE da seção 4 e a FK).
 create index if not exists category_parent_idx
   on public.category (parent_id)
   where deleted_at is null;
 
--- Duas irmãs não podem ter o mesmo nome (ignorando maiúsculas).
+-- Duas irmãs não podem ter o mesmo nome, ignorando maiúsculas.
 --
--- Não é preciosismo: o Chat vai CRIAR CATEGORIA SOZINHO ("gastei 20 no posto" →
--- Carro › Gasolina), e esse "achar ou criar" precisa de uma resposta única para
--- "existe uma Gasolina dentro de Carro?". Com duas irmãs homônimas, metade dos
--- gastos vai para uma e metade para a outra, e o total do mês passa a mentir.
+-- Não é preciosismo: quando o Chat for implementado, ele vai CRIAR CATEGORIA
+-- SOZINHO ("gastei 20 no posto" → Carro › Gasolina). Esse "achar ou criar"
+-- precisa de uma resposta única para "existe uma Gasolina dentro de Carro?" —
+-- com duas Gasolina irmãs, metade dos gastos vai para uma e metade para a outra,
+-- e o total do mês passa a mentir.
 --
 -- `coalesce(parent_id, 0)` porque, em índice único, NULL nunca colide com NULL:
--- sem ele, nada impediria duas categorias de topo chamadas "Casa".
+-- sem o coalesce, nada impediria duas categorias de topo chamadas "Casa".
 --
--- Só as linhas vivas: uma categoria EXCLUÍDA libera o nome; uma DESATIVADA não —
--- ela ainda está no submenu, e o caminho certo é reativá-la.
+-- Só vale para as linhas vivas: uma categoria EXCLUÍDA libera o nome de volta.
+-- Uma DESATIVADA não libera — ela ainda está lá, no submenu, esperando voltar; o
+-- caminho certo é reativá-la, e a tela diz isso com todas as letras.
 create unique index if not exists category_sibling_name_uk
   on public.category (profile_id, coalesce(parent_id, 0), lower(name))
   where deleted_at is null;
 
--- ############ 5. FUNCTIONS ############
--- -------------------------------------------------------------------------
--- handle_new_user — cria o perfil quando a conta nasce (ou é confirmada).
--- Nunca derruba o cadastro: erro vira warning e o app repara via ensure_profile().
--- -------------------------------------------------------------------------
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if new.email_confirmed_at is not null then
-    begin
-      insert into public.profile (auth_uuid, full_name, email)
-      values (
-        new.id,
-        coalesce(nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''), ''),
-        coalesce(new.email, '')
-      )
-      on conflict (auth_uuid) do nothing;
-    exception when others then
-      raise warning 'handle_new_user falhou para % : %', new.id, sqlerrm;
-    end;
-  end if;
-  return new;
-end;
-$$;
 
 -- -------------------------------------------------------------------------
--- handle_user_email_update — espelha auth.users.email em profile.email.
--- auth.users é a fonte da verdade; a cópia anda atrás por aqui e por mais nada.
+-- 3. Guarda de integridade da árvore (trigger)
 -- -------------------------------------------------------------------------
-create or replace function public.handle_user_email_update()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if new.email is distinct from old.email then
-    update public.profile
-       set email = coalesce(new.email, '')
-     where auth_uuid = new.id;
-  end if;
-  return new;
-end;
-$$;
-
--- -------------------------------------------------------------------------
--- profile_guard_and_touch — colunas somente-leitura para o cliente + updated_at.
--- Bypass quando auth.uid() is null (GoTrue, SQL Editor, service_role).
--- -------------------------------------------------------------------------
-create or replace function public.profile_guard_and_touch()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $$
-begin
-  if auth.uid() is not null then
-    if new.auth_uuid  is distinct from old.auth_uuid
-    or new.email      is distinct from old.email
-    or new.deleted_at is distinct from old.deleted_at
-    or new.created_at is distinct from old.created_at then
-      raise exception 'profile_readonly_column'
-        using errcode = 'P0001',
-              hint = 'email vem de auth.users; deleted_at, auth_uuid e created_at nao sao editaveis pelo cliente.';
-    end if;
-  end if;
-
-  new.updated_at := now();
-  return new;
-end;
-$$;
-
--- -------------------------------------------------------------------------
--- current_profile_id — auth.uid() → profile.id. O helper de RLS de TODO módulo.
--- Conta desativada devolve NULL, o que já nega acesso em qualquer policy que
--- compare `profile_id = public.current_profile_id()`.
--- -------------------------------------------------------------------------
-create or replace function public.current_profile_id()
-returns int
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select id
-    from public.profile
-   where auth_uuid = auth.uid()
-     and deleted_at is null
-$$;
-
--- -------------------------------------------------------------------------
--- ensure_profile — rede do app para "logado sem perfil". Idempotente.
--- -------------------------------------------------------------------------
-create or replace function public.ensure_profile()
-returns int
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  v_id int;
-begin
-  if auth.uid() is null then
-    raise exception 'not_authenticated' using errcode = 'P0001';
-  end if;
-
-  insert into public.profile (auth_uuid, full_name, email)
-  select u.id,
-         coalesce(nullif(trim(u.raw_user_meta_data ->> 'full_name'), ''), ''),
-         coalesce(u.email, '')
-    from auth.users u
-   where u.id = auth.uid()
-  on conflict (auth_uuid) do nothing;
-
-  select id into v_id from public.profile where auth_uuid = auth.uid();
-  return v_id;
-end;
-$$;
-
--- -------------------------------------------------------------------------
--- email_available — usada SÓ na troca de e-mail (role authenticated).
--- Devolve um booleano e nada mais; não é exposta a `anon` para não virar um
--- endereço público de descoberta de quem tem conta.
--- -------------------------------------------------------------------------
-create or replace function public.email_available(p_email text)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select not exists (
-    select 1
-      from auth.users u
-     where lower(u.email) = lower(trim(p_email))
-       and u.id <> auth.uid()
-  );
-$$;
-
--- --- public.category -----------------------------------------------------
-
--- -------------------------------------------------------------------------
--- category_guard — a guarda de integridade da árvore (trigger de escrita).
 -- Normaliza o que dá para normalizar e recusa o que quebraria a árvore.
 --
 -- `security definer` porque a função precisa SUBIR pelos ancestrais para caçar
@@ -375,8 +256,17 @@ begin
 end;
 $$;
 
+drop trigger if exists on_category_before_write on public.category;
+create trigger on_category_before_write
+  before insert or update on public.category
+  for each row execute function public.category_guard();
+
+
 -- -------------------------------------------------------------------------
--- category_subtree — a categoria e todos os seus descendentes vivos.
+-- 4. A regra de exclusão / desativação
+-- -------------------------------------------------------------------------
+
+-- --- 4.1 A subárvore -----------------------------------------------------
 -- A categoria e todos os seus descendentes vivos. É a base de tudo: da decisão
 -- de excluir, da desativação em cascata e, quando o Chat existir, do "quanto
 -- gastei com carro esse mês?" (que soma Carro E tudo abaixo dele).
@@ -405,8 +295,7 @@ as $$
   select arvore.id from arvore;
 $$;
 
--- -------------------------------------------------------------------------
--- category_linked_records — quantos lançamentos apontam para estas categorias.
+-- --- 4.2 Os registros vinculados ----------------------------------------
 -- ***************** O PONTO DE EXTENSÃO DESTE MÓDULO **********************
 --
 -- Quantos LANÇAMENTOS (gastos, receitas) apontam para estas categorias.
@@ -442,8 +331,7 @@ as $$
   select 0::int;
 $$;
 
--- -------------------------------------------------------------------------
--- category_action_for — "exclui ou desativa?", numa função só.
+-- --- 4.3 A decisão -------------------------------------------------------
 -- "Exclui ou desativa?", numa função só.
 --
 -- Ela é minúscula e existe por um motivo: a regra é consultada em DOIS momentos
@@ -459,14 +347,13 @@ as $$
   select case when p_descendants = 0 and p_records = 0 then 'delete' else 'deactivate' end;
 $$;
 
--- -------------------------------------------------------------------------
--- category_impact — a prévia que alimenta a modal de confirmação.
+-- --- 4.4 A prévia (para a modal de confirmação) --------------------------
 -- O que ACONTECERIA se a categoria fosse excluída agora. A tela chama isto ao
 -- abrir a confirmação, para dizer a verdade em vez de um texto genérico:
 -- "3 subcategorias vão junto para Desativadas" é uma frase diferente de
 -- "esta categoria será excluída".
 --
--- É só uma PRÉVIA: quem decide de fato é category_remove, ao agir.
+-- É só uma PRÉVIA: quem decide de fato é a 4.5, no momento de agir.
 create or replace function public.category_impact(p_category_id int)
 returns table (descendants int, records int, action text)
 language plpgsql
@@ -493,8 +380,7 @@ begin
 end;
 $$;
 
--- -------------------------------------------------------------------------
--- category_remove — excluir (soft-delete) ou, quando não dá, desativar.
+-- --- 4.5 A ação ----------------------------------------------------------
 -- Excluir a categoria — ou desativá-la, quando excluir não é possível.
 --
 -- Devolve o que REALMENTE aconteceu ('deleted' | 'deactivated'), e é esse
@@ -533,7 +419,7 @@ begin
   --
   -- A subárvore inteira, e não só a mãe: uma mãe inativa com filhas ativas
   -- deixaria as filhas sem caminho até elas na tela — presentes no banco,
-  -- invisíveis para quem usa. Some tudo junto, e volta tudo junto (category_reactivate).
+  -- invisíveis para quem usa. Some tudo junto, e volta tudo junto (4.6).
   update public.category
      set is_active = false
    where id = any (v_ids)
@@ -543,12 +429,11 @@ begin
 end;
 $$;
 
--- -------------------------------------------------------------------------
--- category_reactivate — o caminho de volta do submenu "Desativadas".
+-- --- 4.6 A volta ---------------------------------------------------------
 -- Reativar uma categoria desativada. O caminho de volta do submenu.
 --
 -- Mexe em DOIS sentidos, e os dois são necessários:
---   • PARA BAIXO — a subárvore inteira, porque foi assim que ela saiu (category_remove);
+--   • PARA BAIXO — a subárvore inteira, porque foi assim que ela saiu (4.5);
 --   • PARA CIMA  — a cadeia de mães, porque uma categoria ativa pendurada numa
 --     mãe inativa continuaria invisível na árvore. Reativar sem subir devolveria
 --     à pessoa uma categoria que "voltou" e que ela não consegue encontrar.
@@ -588,67 +473,10 @@ begin
 end;
 $$;
 
--- ############ 6. TRIGGERS ############
--- --- auth.users ----------------------------------------------------------
 
--- Caminho real deste projeto: com a confirmação de e-mail DESLIGADA, a conta já
--- nasce confirmada no próprio INSERT.
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function public.handle_new_user();
-
--- Rede para o dia em que a confirmação for LIGADA (aí o perfil só deve nascer
--- depois que a pessoa confirmar).
-drop trigger if exists on_auth_user_confirmed on auth.users;
-create trigger on_auth_user_confirmed
-  after update of email_confirmed_at on auth.users
-  for each row
-  when (old.email_confirmed_at is null and new.email_confirmed_at is not null)
-  execute function public.handle_new_user();
-
--- Espelho do e-mail em profile.email.
-drop trigger if exists on_auth_user_email_updated on auth.users;
-create trigger on_auth_user_email_updated
-  after update of email on auth.users
-  for each row execute function public.handle_user_email_update();
-
--- --- public.profile ------------------------------------------------------
-
--- Colunas somente-leitura para o cliente + updated_at automático.
-drop trigger if exists on_profile_before_update on public.profile;
-create trigger on_profile_before_update
-  before update on public.profile
-  for each row execute function public.profile_guard_and_touch();
-
--- --- public.category ------------------------------------------------------
-
--- Normaliza nome/cor, aplica "excluída é sempre inativa" e recusa ciclo na árvore.
-drop trigger if exists on_category_before_write on public.category;
-create trigger on_category_before_write
-  before insert or update on public.category
-  for each row execute function public.category_guard();
-
--- ############ 7. VIEWS ############
--- (nenhuma)
-
--- ############ 8. RLS + POLICIES ############
-alter table public.profile enable row level security;
-
--- Sem policy de INSERT: quem cria o perfil é o trigger handle_new_user.
--- Sem policy de DELETE: não se apaga a linha — a saída é o soft-delete.
-drop policy if exists profile_select_own on public.profile;
-create policy profile_select_own on public.profile
-  for select to authenticated
-  using (auth.uid() = auth_uuid);
-
-drop policy if exists profile_update_own on public.profile;
-create policy profile_update_own on public.profile
-  for update to authenticated
-  using (auth.uid() = auth_uuid)
-  with check (auth.uid() = auth_uuid);
-
--- --- public.category -----------------------------------------------------
+-- -------------------------------------------------------------------------
+-- 5. RLS + policies
+-- -------------------------------------------------------------------------
 alter table public.category enable row level security;
 
 -- `deleted_at is null` entra nas policies, e não só nas queries do front: assim
@@ -674,31 +502,10 @@ create policy category_update_own on public.category
 -- `category_remove()`. Um DELETE de verdade cascatearia a subárvore inteira pela
 -- FK e, no futuro, levaria junto o histórico que apontasse para ela.
 
--- ############ 9. GRANTS ############
--- --- public.profile ------------------------------------------------------
-revoke all on public.profile from anon, authenticated;
-grant select on public.profile to authenticated;
-grant update (full_name, avatar_path) on public.profile to authenticated;
 
--- --- functions -----------------------------------------------------------
--- Funções de trigger: ninguém chama à mão.
-revoke execute on function public.handle_new_user()          from public, anon, authenticated;
-revoke execute on function public.handle_user_email_update() from public, anon, authenticated;
-revoke execute on function public.profile_guard_and_touch()  from public, anon, authenticated;
-
--- Funções da conta: só quem está logado.
-revoke execute on function public.current_profile_id()       from public, anon;
-grant  execute on function public.current_profile_id()       to authenticated;
-
-revoke execute on function public.ensure_profile()           from public, anon;
-grant  execute on function public.ensure_profile()           to authenticated;
-
--- NÃO exposta a `anon` de propósito: seria um endereço público para descobrir
--- quem tem conta no sistema, e sem CAPTCHA nada impediria raspar isso em lista.
-revoke execute on function public.email_available(text)      from public, anon;
-grant  execute on function public.email_available(text)      to authenticated;
-
--- --- public.category -----------------------------------------------------
+-- -------------------------------------------------------------------------
+-- 6. Grants (menor privilégio)
+-- -------------------------------------------------------------------------
 -- A RLS diz QUAIS LINHAS; o grant de coluna diz QUAIS COLUNAS. Aqui é o segundo
 -- que importa: sem ele, o dono da própria linha poderia mandar
 -- `is_active = true` ou `deleted_at = null` direto pela API REST e desfazer
@@ -716,8 +523,8 @@ grant update (name, color, parent_id)   on public.category to authenticated;
 -- Função de trigger: ninguém chama à mão.
 revoke execute on function public.category_guard() from public, anon, authenticated;
 
--- Internas das RPCs. Não são expostas: category_impact/remove/reactivate são
--- `security definer` e as chamam como DONAS — o cliente não precisa de execute aqui.
+-- Internas das RPCs. Não são expostas: as funções de 4.4–4.6 são `security
+-- definer` e as chamam como DONAS, então o cliente não precisa de execute aqui.
 revoke execute on function public.category_subtree(int)              from public, anon, authenticated;
 revoke execute on function public.category_linked_records(int[])     from public, anon, authenticated;
 revoke execute on function public.category_action_for(int, int)      from public, anon, authenticated;
@@ -730,44 +537,4 @@ revoke execute on function public.category_remove(int)     from public, anon;
 grant  execute on function public.category_remove(int)     to authenticated;
 
 revoke execute on function public.category_reactivate(int) from public, anon;
-
--- ############ 10. REALTIME ############
--- (nada publicado no realtime)
-
--- ############ 11. STORAGE ############
--- -------------------------------------------------------------------------
--- avatars — a foto de perfil.
---
--- LEITURA pública: a foto aparece no menu do usuário em toda tela, e um bucket
--- privado exigiria assinar uma URL temporária a cada montagem. A pasta é o
--- `auth_uuid` justamente por isso: uuid não se adivinha, enquanto uma pasta
--- numerada (1/, 2/, 3/…) se percorreria em minutos.
---
--- ESCRITA presa à própria pasta, pela policy abaixo.
---
--- Limite de tamanho e lista de mimes ficam no BUCKET, não só no front: validação
--- de cliente é conveniência, não segurança.
--- -------------------------------------------------------------------------
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('avatars', 'avatars', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
-on conflict (id) do update
-  set public             = excluded.public,
-      file_size_limit    = excluded.file_size_limit,
-      allowed_mime_types = excluded.allowed_mime_types;
-
--- `for all` cobre insert/select/update/delete — inclusive o delete, que é o que
--- o botão "Remover foto" usa.
-drop policy if exists avatar_own_folder on storage.objects;
-create policy avatar_own_folder on storage.objects
-  for all to authenticated
-  using (
-    bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  )
-  with check (
-    bucket_id = 'avatars'
-    and (storage.foldername(name))[1] = auth.uid()::text
-  );
-
--- ############ 12. SEEDS ############
--- (nenhum)
+grant  execute on function public.category_reactivate(int) to authenticated;

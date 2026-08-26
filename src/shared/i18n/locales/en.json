@@ -120,10 +120,81 @@
     }
   },
   "categories": {
-    "placeholder": {
-      "step1": "Categories table with a self-relation (parent category)",
-      "step2": "Recursive query summing the category and every descendant",
-      "step3": "Navigable tree to create, rename and move categories"
+    "page": {
+      "count_one": "{{count}} category",
+      "count_other": "{{count}} categories",
+      "new": "New category",
+      "collapseAll": "Collapse all",
+      "expandAll": "Expand all",
+      "loadFailed": "Could not load your categories.",
+      "retry": "Try again"
+    },
+    "empty": {
+      "title": "No categories yet",
+      "description": "Categories organise your expenses and income into a hierarchy — Car › Fuel, Home › Groceries › Market. Create the first one here, or let the chat create it for you when you log an expense.",
+      "action": "Create the first one",
+      "allInactive": "All of your categories are deactivated. Bring one back below, or create a new one."
+    },
+    "tree": {
+      "label": "Your categories",
+      "collapse": "Collapse {{name}}",
+      "expand": "Expand {{name}}",
+      "addChild": "New subcategory in {{name}}",
+      "actions": "Actions for {{name}}",
+      "edit": "Edit",
+      "remove": "Delete"
+    },
+    "form": {
+      "createTitle": "New category",
+      "createChildTitle": "New subcategory",
+      "editTitle": "Edit category",
+      "atTopLevel": "A top-level category, with no parent.",
+      "inside": "Inside {{path}}.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Fuel",
+      "created": "Category created",
+      "saved": "Category saved"
+    },
+    "color": {
+      "label": "Colour",
+      "pick": "Use colour {{hex}}",
+      "custom": "Pick another colour",
+      "customLabel": "Custom colour"
+    },
+    "remove": {
+      "title": "Delete {{name}}?",
+      "checking": "Checking what is linked to it…",
+      "willDelete": "Nothing is linked to it: it will be deleted for good.",
+      "willDeleteHint": "Had it any subcategories or entries, it would only be deactivated — and you could bring it back.",
+      "willDeactivate": "It will not be deleted: it will be deactivated.",
+      "becauseChildren_one": "{{count}} subcategory goes with it",
+      "becauseChildren_other": "{{count}} subcategories go with it",
+      "becauseRecords_one": "{{count}} entry uses this category",
+      "becauseRecords_other": "{{count}} entries use this category",
+      "willDeactivateHint": "It moves to \"Deactivated\", and you can bring it back whenever you want.",
+      "confirmDelete": "Delete",
+      "confirmDeactivate": "Deactivate",
+      "deleted": "Category deleted",
+      "deactivated": "Category deactivated"
+    },
+    "inactive": {
+      "title": "Deactivated",
+      "count_one": "{{count}} category out of the tree",
+      "count_other": "{{count}} categories out of the tree",
+      "description": "Categories that could not be deleted because something is linked to them. They do not disappear: they wait here until you bring them back.",
+      "at": "In {{path}}",
+      "atTopLevel": "Top-level category",
+      "withChildren_one": "with {{count}} subcategory",
+      "withChildren_other": "with {{count}} subcategories",
+      "reactivate": "Reactivate",
+      "reactivated": "Category reactivated"
+    },
+    "errors": {
+      "nomeDuplicado": "There is already a category with this name here. If it is deactivated, bring it back from \"Deactivated\".",
+      "maeExcluida": "The parent category no longer exists. Reload the screen.",
+      "ciclo": "A category cannot live inside itself.",
+      "naoEncontrada": "This category no longer exists. Reload the screen.",
+      "desconhecido": "Could not finish. Try again."
     }
   },
   "log": {

@@ -30,3 +30,29 @@ create policy profile_update_own on public.profile
   for update to authenticated
   using (auth.uid() = auth_uuid)
   with check (auth.uid() = auth_uuid);
+
+-- --- public.category -----------------------------------------------------
+alter table public.category enable row level security;
+
+-- `deleted_at is null` entra nas policies, e não só nas queries do front: assim
+-- "excluída sumiu" é uma garantia do BANCO, não uma convenção que alguém pode
+-- esquecer de repetir na próxima tela (ou no Chat, ou no Log da IA).
+drop policy if exists category_select_own on public.category;
+create policy category_select_own on public.category
+  for select to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null);
+
+drop policy if exists category_insert_own on public.category;
+create policy category_insert_own on public.category
+  for insert to authenticated
+  with check (profile_id = public.current_profile_id());
+
+drop policy if exists category_update_own on public.category;
+create policy category_update_own on public.category
+  for update to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null)
+  with check (profile_id = public.current_profile_id());
+
+-- Sem policy de DELETE, de propósito: a saída é o soft-delete de
+-- `category_remove()`. Um DELETE de verdade cascatearia a subárvore inteira pela
+-- FK e, no futuro, levaria junto o histórico que apontasse para ela.

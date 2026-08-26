@@ -37,3 +37,60 @@ export interface Perfil {
   /** Última gravação do perfil — usada como "versão" da foto (cache busting). */
   atualizadoEm: string
 }
+
+/**
+ * Uma categoria da hierarquia — a linha de `public.category` traduzida.
+ *
+ * A árvore é auto-relacionada: `paiId` aponta para a categoria mãe, e `null`
+ * significa categoria de topo. A profundidade é livre (`Carro › Gasolina`,
+ * `Casa › Mercado › Feira`).
+ *
+ * A **forma de árvore** é montada no front, em `pages/Categorias/arvore.ts`: o
+ * banco devolve a lista plana, que é o formato certo para trafegar.
+ */
+export interface Categoria {
+  id: number
+  /** Categoria mãe. `null` = categoria de topo. */
+  paiId: number | null
+  nome: string
+  /**
+   * A etiqueta de cor escolhida pelo usuário, em hexadecimal (`#10b981`).
+   *
+   * É **dado**, não identidade visual: a paleta, as fontes e o raio do app
+   * continuam vindo do `src/theme.css`. O que se guarda aqui é a escolha da
+   * pessoa de pintar "Carro" de verde — por isso vai num `style`, e não numa
+   * classe do Tailwind.
+   */
+  cor: string
+  /**
+   * Ativa. `false` = desativada: sai da árvore principal e vai para o submenu
+   * "Desativadas", de onde pode voltar. Uma categoria desativada arrasta a
+   * subárvore inteira junto — o banco garante esse invariante.
+   */
+  ativa: boolean
+  criadaEm: string
+}
+
+/** Uma categoria já com as filhas penduradas — o formato que a tela desenha. */
+export interface NoDeCategoria extends Categoria {
+  filhas: NoDeCategoria[]
+}
+
+/**
+ * O que **aconteceria** ao excluir uma categoria — a prévia que a modal de
+ * confirmação usa para dizer a verdade em vez de um texto genérico.
+ *
+ * É só uma prévia: quem decide de fato é o banco, no momento de agir
+ * (`excluirCategoria` devolve o que realmente aconteceu).
+ */
+export interface ImpactoDeExclusao {
+  /** Quantas subcategorias vão junto (a própria categoria não conta). */
+  descendentes: number
+  /** Quantos lançamentos (gastos/receitas) apontam para a subárvore. */
+  registros: number
+  /** `'excluir'` só quando não há nada vinculado; senão, `'desativar'`. */
+  acao: AcaoDeRemocao
+}
+
+/** O destino de uma categoria ao ser removida. */
+export type AcaoDeRemocao = 'excluir' | 'desativar'
