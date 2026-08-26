@@ -63,3 +63,25 @@ revoke execute on function public.category_remove(int)     from public, anon;
 grant  execute on function public.category_remove(int)     to authenticated;
 
 revoke execute on function public.category_reactivate(int) from public, anon;
+
+-- --- public.expense ------------------------------------------------------
+-- Dois recortes, por dois motivos distintos:
+--   • `amount_brl` fora do grant torna a conversão da trigger INESCAPÁVEL.
+--     Com grant, o cliente mandaria "US$ 50, cotação 5,16, R$ 10,00" pela API
+--     REST e o total do mês mentiria, sem nenhuma linha estranha à vista.
+--   • `is_active` e `deleted_at` fora do grant fazem de `expense_remove()` a
+--     única saída — com grant, dava para desfazer uma exclusão zerando a coluna.
+-- `profile_id` também fica de fora: quem o preenche é o DEFAULT.
+revoke all on public.expense from anon, authenticated;
+grant select on public.expense to authenticated;
+grant insert (name, amount, currency, exchange_rate, category_id, occurred_at)
+      on public.expense to authenticated;
+grant update (name, amount, currency, exchange_rate, category_id, occurred_at)
+      on public.expense to authenticated;
+
+-- Função de trigger: ninguém chama à mão.
+revoke execute on function public.expense_guard() from public, anon, authenticated;
+
+-- O que a tela chama: só quem está logado.
+revoke execute on function public.expense_remove(int) from public, anon;
+grant  execute on function public.expense_remove(int) to authenticated;

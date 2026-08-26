@@ -4,10 +4,17 @@ import type { Categoria, NoDeCategoria } from '@/shared/data/model'
  * A forma de árvore das categorias — o passo entre o que o banco devolve e o
  * que a tela desenha.
  *
- * Fica fora do `supabase.ts` porque não é uma consulta: são funções puras, sem
- * rede e sem estado. O banco manda uma **lista plana** (que é o formato certo
- * para trafegar: sem repetição e sem aninhamento a serializar) e aqui ela vira
- * a árvore que os componentes percorrem.
+ * Mora em `shared/data` porque a hierarquia de categorias é a **espinha do
+ * sistema inteiro**, não um detalhe de uma tela: Categorias a desenha, Gastos e
+ * Receitas a usam para escolher e para filtrar (filtrar por `Carro` tem de
+ * trazer `Carro › Gasolina` junto) e o Chat vai usá-la para achar-ou-criar a
+ * categoria de um gasto ditado. Fosse pasta de um módulo, os outros três
+ * reescreveriam a mesma travessia de árvore, e as quatro versões divergiriam no
+ * primeiro caso de canto.
+ *
+ * Não é uma consulta: são funções **puras**, sem rede e sem estado. O banco manda
+ * uma **lista plana** (que é o formato certo para trafegar: sem repetição e sem
+ * aninhamento a serializar) e aqui ela vira a árvore que os componentes percorrem.
  *
  * Também é o único lugar que sabe **separar o que está ativo do que está
  * desativado**. Essa separação é uma regra de leitura da tela, não do banco: a
@@ -103,4 +110,70 @@ export function caminhoAte(categorias: Categoria[], id: number): Categoria[] {
 /** Quantas categorias há nesta subárvore, contando a raiz. */
 export function tamanhoDaSubarvore(no: NoDeCategoria): number {
   return 1 + no.filhas.reduce((total, filha) => total + tamanhoDaSubarvore(filha), 0)
+}
+
+/**
+ * Todos os ids da subárvore de uma categoria — **ela inclusive**.
+ *
+ * É o que faz "quanto gastei com Carro?" somar também `Carro › Gasolina` e
+ * `Carro › Seguro`. Sem isto, filtrar por uma categoria do meio da árvore
+ * devolveria só os gastos lançados exatamente nela — quase sempre nenhum, porque
+ * quem registra escolhe a folha.
+ *
+ * O espelho disto no banco é `category_subtree()`, usada pela regra de exclusão.
+ * As duas existem porque respondem em lugares diferentes: lá, para decidir se uma
+ * categoria pode ser excluída; aqui, para montar o filtro da lista sem uma ida ao
+ * servidor a cada troca do seletor.
+ *
+ * Uma categoria que não está na lista devolve só o próprio id: é o resultado
+ * honesto (nenhum descendente conhecido) e mantém o filtro funcionando.
+ */
+export function idsDaSubarvore(categorias: Categoria[], id: number): number[] {
+  const filhasPorMae = new Map<number, number[]>()
+  for (const categoria of categorias) {
+    if (categoria.paiId === null) continue
+    const irmas = filhasPorMae.get(categoria.paiId)
+    if (irmas) irmas.push(categoria.id)
+    else filhasPorMae.set(categoria.paiId, [categoria.id])
+  }
+
+  const ids: number[] = []
+  const aVisitar = [id]
+  // O teto é a rede contra um ciclo nos dados: o banco impede que um se forme,
+  // mas uma travessia por ponteiros não deve depender disso para terminar —
+  // travaria a aba inteira.
+  while (aVisitar.length > 0 && ids.length <= categorias.length) {
+    const atual = aVisitar.pop() as number
+    if (ids.includes(atual)) continue
+    ids.push(atual)
+    aVisitar.push(...(filhasPorMae.get(atual) ?? []))
+  }
+
+  return ids
+}
+
+/**
+ * A árvore de volta em lista, mas **na ordem em que se lê** — mãe, depois as
+ * filhas dela, depois as netas — com a profundidade de cada uma.
+ *
+ * É o formato de que um `<select>` precisa: HTML não aninha opções em mais de um
+ * nível, então a hierarquia é comunicada pelo recuo. A ordem de leitura é o que
+ * mantém `Gasolina` logo abaixo de `Carro` na lista suspensa, em vez de perdida
+ * no meio das categorias de topo.
+ *
+ * Só as **ativas**: uma categoria desativada saiu da árvore de propósito, e
+ * oferecê-la num seletor de gasto novo a traria de volta pela porta dos fundos.
+ */
+export function achatarArvore(categorias: Categoria[]): { categoria: Categoria; nivel: number }[] {
+  const achatadas: { categoria: Categoria; nivel: number }[] = []
+
+  function descer(nos: NoDeCategoria[], nivel: number) {
+    for (const no of nos) {
+      achatadas.push({ categoria: no, nivel })
+      descer(no.filhas, nivel + 1)
+    }
+  }
+
+  descer(separarPorEstado(categorias).ativas, 0)
+  return achatadas
 }

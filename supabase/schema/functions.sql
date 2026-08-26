@@ -298,31 +298,23 @@ $$;
 
 -- -------------------------------------------------------------------------
 -- category_linked_records — quantos lançamentos apontam para estas categorias.
--- ***************** O PONTO DE EXTENSÃO DESTE MÓDULO **********************
 --
--- Quantos LANÇAMENTOS (gastos, receitas) apontam para estas categorias.
+-- É o que decide, junto com o número de descendentes, se uma categoria pode ser
+-- EXCLUÍDA ou só DESATIVADA. Uma categoria com gasto vinculado nunca é excluída:
+-- o histórico financeiro não pode ficar apontando para o vazio.
 --
--- Hoje devolve 0 porque as tabelas `expense` e `income` AINDA NÃO EXISTEM — os
--- módulos de Gastos e Receitas são placeholders. A função existe assim mesmo,
--- desde já, para que ligar essa conta seja UMA edição em UM lugar: a regra de
--- "exclui ou desativa?" já está escrita, testada e em uso.
+-- `income` entra aqui do mesmo jeito quando o módulo de Receitas for feito:
+--     + (select count(*) from public.income i
+--         where i.category_id = any (p_category_ids) and i.deleted_at is null)
+-- e mais nada — nem no banco, nem na tela, nem nos textos da modal.
 --
--- QUANDO os módulos entrarem, troque o corpo por:
---
---     select (
---       (select count(*) from public.expense e where e.category_id = any (p_category_ids))
---     + (select count(*) from public.income  i where i.category_id = any (p_category_ids))
---     )::int;
---
--- e mais nada. `category_impact` e `category_remove` passam a desativar sozinhas
--- as categorias que já têm movimento, sem nenhuma outra alteração — nem no
--- banco, nem na tela, nem nos textos da modal de confirmação.
--- *************************************************************************
+-- `deleted_at is null` no filtro: um gasto EXCLUÍDO não é vínculo. Se contasse,
+-- uma categoria usada uma única vez, num gasto já apagado, nunca mais poderia
+-- ser excluída — presa por um registro que ninguém mais enxerga.
 --
 -- Não filtra por perfil de propósito: os ids que ela recebe vêm sempre de
--- `category_subtree`, que já os limitou ao perfil de quem chamou. Ao ligar as
--- contas acima, mantenha essa premissa — nunca chame esta função com ids que não
--- tenham passado por lá.
+-- `category_subtree`, que já os limitou ao perfil de quem chamou. Mantenha essa
+-- premissa — nunca chame esta função com ids que não tenham passado por lá.
 create or replace function public.category_linked_records(p_category_ids int[])
 returns int
 language sql
@@ -330,7 +322,12 @@ stable
 security definer
 set search_path = ''
 as $$
-  select 0::int;
+  select (
+    select count(*)
+      from public.expense e
+     where e.category_id = any (p_category_ids)
+       and e.deleted_at is null
+  )::int;
 $$;
 
 -- -------------------------------------------------------------------------
@@ -480,3 +477,140 @@ end;
 $$;
 
 
+
+-- --- public.expense -------------------------------------------------------
+
+-- -------------------------------------------------------------------------
+-- expense_guard — a guarda de escrita do gasto (trigger). É AQUI que a
+-- conversão para reais acontece: o cliente manda valor, moeda e cotação, e
+-- quem calcula `amount_brl` é o banco.
+-- -------------------------------------------------------------------------
+-- Normaliza o nome, sustenta "excluído é sempre inativo", confere a categoria e,
+-- o principal, CALCULA O VALOR EM REAIS.
+--
+-- O cálculo mora aqui, e não no front-end, porque `amount_brl` é a coluna
+-- que todos os totais somam. Se o cliente a enviasse, bastaria uma versão antiga
+-- do app, uma chamada direta à API REST ou um bug de arredondamento para o
+-- extrato passar a mentir — e mentir de um jeito invisível, porque cada linha
+-- continuaria parecendo perfeitamente normal.
+--
+-- `security definer` porque ela precisa CONSULTAR a `category` para conferir o
+-- dono, e essa consulta não pode depender da RLS de quem está gravando.
+create or replace function public.expense_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_brl numeric;
+begin
+  new.name       := trim(new.name);
+  new.updated_at := now();
+
+  -- EXCLUÍDO É SEMPRE INATIVO. Escrito aqui (e não deixado para quem chama) para
+  -- que não exista caminho — RPC, SQL Editor, script futuro — capaz de gravar
+  -- uma linha excluída que ainda se diz ativa.
+  if new.deleted_at is not null then
+    new.is_active := false;
+  end if;
+
+  -- --- A conversão ------------------------------------------------------
+  if new.currency = 'BRL' then
+    -- Já é real: não há cotação a guardar, e o valor em reais é o próprio valor.
+    -- Zeramos a cotação em vez de recusar quem a mandou — um cliente que troca
+    -- de USD para BRL no formulário não precisa saber que tem de limpar o campo.
+    new.exchange_rate := null;
+    new.amount_brl    := new.amount;
+  else
+    if new.exchange_rate is null or new.exchange_rate <= 0 then
+      raise exception 'expense_rate_required'
+        using errcode = 'P0001',
+              hint = 'Gasto em moeda estrangeira exige a cotacao.';
+    end if;
+
+    -- `round(x, 2)` explícito, e não deixado para a escala da coluna: o produto
+    -- de um valor de 2 casas por uma cotação de 6 tem 8 casas decimais, e é aqui
+    -- que ele vira centavo — meio centavo sobe.
+    --
+    -- O teste de faixa vem ANTES de a linha chegar na coluna. É o que transforma
+    -- o "numeric field overflow" cru do Postgres numa mensagem que a tela sabe
+    -- traduzir: US$ 5.000.000 a 5,16 passa de 9.999.999,99 e o certo é dizer
+    -- isso, não estourar.
+    v_brl := round(new.amount * new.exchange_rate, 2);
+
+    if v_brl < 0.01 or v_brl > 9999999.99 then
+      raise exception 'expense_amount_out_of_range'
+        using errcode = 'P0001',
+              hint = 'O valor convertido nao cabe no limite da coluna.';
+    end if;
+
+    new.amount_brl := v_brl;
+  end if;
+
+  -- --- A categoria ------------------------------------------------------
+  -- A FK composta já impede pendurar o gasto numa categoria de outro perfil.
+  -- O que ela NÃO vê é a categoria EXCLUÍDA (soft-delete): a linha continua lá,
+  -- então a FK a aceita de bom grado, e o gasto nasceria dentro de uma gaveta
+  -- que sumiu da tela — invisível na lista por categoria, mas somando no total.
+  --
+  -- O filtro por `new.profile_id` é segurança, não só correção: esta função é
+  -- `security definer` e enxerga a tabela inteira. Sem ele, um id de categoria
+  -- alheia devolveria 'expense_category_not_found' num caso e o erro de chave
+  -- estrangeira no outro — e a diferença entre as duas mensagens já é um bit de
+  -- informação sobre um id que não é do usuário. Com o filtro, categoria de
+  -- outra pessoa é simplesmente "categoria que não existe".
+  if new.category_id is not null then
+    if not exists (
+      select 1 from public.category c
+       where c.id = new.category_id
+         and c.profile_id = new.profile_id
+         and c.deleted_at is null
+    ) then
+      raise exception 'expense_category_not_found'
+        using errcode = 'P0001',
+              hint = 'A categoria nao existe (ou foi excluida).';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+-- -------------------------------------------------------------------------
+-- expense_remove — excluir um gasto (soft-delete). A única porta de saída.
+-- -------------------------------------------------------------------------
+-- Excluir um gasto é SOFT-DELETE: `deleted_at` preenchido, `is_active` a false
+-- pela trigger, e a linha some da RLS.
+--
+-- É uma RPC, e não um `update` do cliente, porque o cliente NÃO TEM GRANT em
+-- `deleted_at` (seção 7) — de propósito. Com grant, um `update` pela API REST
+-- poderia tanto excluir quanto RESSUSCITAR um gasto zerando a coluna, e a
+-- "exclusão" viraria uma sugestão. Aqui a porta é uma só, e ela abre num
+-- sentido.
+--
+-- Diferente de `category_remove`, não há decisão a tomar: nada é pendurado num
+-- gasto, então excluir sempre exclui.
+create or replace function public.expense_remove(p_expense_id int)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_perfil int := public.current_profile_id();
+begin
+  update public.expense
+     set deleted_at = now()
+   where id = p_expense_id
+     and profile_id = v_perfil
+     and deleted_at is null;
+
+  -- Nenhuma linha tocada = o gasto não existe, já foi excluído OU é de outra
+  -- pessoa. A mensagem é a mesma nos três casos, de propósito: distinguir "não
+  -- existe" de "não é seu" confirmaria a existência de um id alheio.
+  if not found then
+    raise exception 'expense_not_found' using errcode = 'P0001';
+  end if;
+end;
+$$;

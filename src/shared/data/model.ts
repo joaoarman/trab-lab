@@ -94,3 +94,91 @@ export interface ImpactoDeExclusao {
 
 /** O destino de uma categoria ao ser removida. */
 export type AcaoDeRemocao = 'excluir' | 'desativar'
+
+/**
+ * A moeda de um lançamento — o enum `public.currency` do banco.
+ *
+ * Domínio fechado de propósito: um texto livre aceitaria `R$`, `reais`, `brl` e
+ * `BRL ` como quatro moedas distintas, e o relatório por moeda passaria a
+ * depender de o front-end nunca errar a digitação.
+ */
+export type Moeda = 'BRL' | 'USD'
+
+/**
+ * Um gasto — a linha de `public.expense` traduzida.
+ *
+ * ## Dois valores, e o porquê
+ *
+ * `valor` é o que a pessoa gastou, **na moeda em que gastou**. `valorEmBrl` é o
+ * mesmo gasto em reais. Todo total do sistema — o mês, o gráfico por categoria, a
+ * resposta do Chat — soma o **segundo**: somar o primeiro colocaria dólar e real
+ * na mesma conta, e o resultado não seria dinheiro nenhum.
+ *
+ * Os dois são números em **reais** (`numeric(12,2)` no banco — decimal exato, e
+ * nunca `float`). Para exibir, use `formatMoney` de `src/shared/i18n/format.ts`;
+ * para **somar** vários, use `somar` de `src/shared/utils/dinheiro.ts`, que faz a
+ * conta em centavos inteiros — o `number` do JavaScript é binário, e somar
+ * `0.1 + 0.2` direto dá `0.30000000000000004`.
+ *
+ * Quem calcula `valorEmBrl` é o **banco**, na trigger de escrita. O front manda
+ * valor, moeda e cotação; a conversão não passa por aqui.
+ */
+export interface Gasto {
+  id: number
+  /** `null` = "Sem categoria" — registrar nunca trava por falta de hierarquia. */
+  categoriaId: number | null
+  /** Onde/no que foi o gasto ("posto de gasolina"). A categoria diz a gaveta. */
+  nome: string
+  /** Em reais (ou na unidade de `moeda`). US$ 50,00 = `50` — não em centavos. */
+  valor: number
+  moeda: Moeda
+  /**
+   * A taxa de câmbio do **momento do registro**: quantos reais valia 1 unidade
+   * de `moeda`. `null` quando o gasto já é em reais.
+   *
+   * É guardada, e não recalculada na leitura, porque cotação é um fato datado: o
+   * gasto de US$ 50 de março valeu o dólar de março. Um extrato que reconverte
+   * tudo pela cotação de hoje muda de valor sozinho toda manhã.
+   */
+  cotacao: number | null
+  /** O mesmo valor convertido para reais. É esta coluna que todo total soma. */
+  valorEmBrl: number
+  /**
+   * Quando o gasto **aconteceu** — não quando foi registrado.
+   *
+   * A distinção é o motivo de o campo existir: dá para lançar hoje, à noite, o
+   * almoço de ontem. Ordenar pelo registro colocaria esse almoço no topo da
+   * lista, como se fosse a coisa mais recente que a pessoa fez.
+   */
+  ocorreuEm: string
+  /** Hoje só acompanha a exclusão. Reservado para um "arquivar" futuro. */
+  ativo: boolean
+  criadoEm: string
+}
+
+/** O que a tela manda para criar ou salvar um gasto. */
+export interface RascunhoDeGasto {
+  nome: string
+  /** Em reais (ou na unidade da moeda escolhida). */
+  valor: number
+  moeda: Moeda
+  /** Obrigatória fora do real; ignorada (e zerada pelo banco) quando é BRL. */
+  cotacao: number | null
+  categoriaId: number | null
+  /** ISO 8601. */
+  ocorreuEm: string
+}
+
+/** O recorte que a lista de gastos está mostrando. */
+export interface FiltroDeGastos {
+  /** Data (YYYY-MM-DD), inclusive — o dia inteiro entra. */
+  de: string
+  /** Data (YYYY-MM-DD), inclusive — o dia inteiro entra. */
+  ate: string
+  /**
+   * `null` = todas as categorias · `'sem'` = só os gastos sem categoria ·
+   * número = aquela categoria **e todos os descendentes dela** (é o que faz
+   * "Carro" trazer "Carro › Gasolina" junto).
+   */
+  categoriaId: number | 'sem' | null
+}

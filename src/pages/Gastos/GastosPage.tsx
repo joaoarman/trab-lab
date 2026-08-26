@@ -1,7 +1,329 @@
-import { ModulePlaceholder } from '@/shared/components/ModulePlaceholder'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Loader2, Plus, Receipt, TriangleAlert } from 'lucide-react'
 
-// Placeholder do módulo — o propósito e as regras entram quando ele for detalhado.
-// As queries vão em ./supabase.ts, retornando tipos de domínio de src/shared/data/model.ts.
+import { Alert } from '@/shared/components/ui/alert'
+import { Button } from '@/shared/components/ui/button'
+import { Card, CardContent, CardHeader } from '@/shared/components/ui/card'
+import { Separator } from '@/shared/components/ui/separator'
+import type { Categoria, FiltroDeGastos, Gasto } from '@/shared/data/model'
+import { formatDate, formatMoney } from '@/shared/i18n/format'
+import { somar } from '@/shared/utils/dinheiro'
+import { listarCategorias, listarGastos } from './supabase'
+import { periodoDe, type Atalho, type PeriodoEscolhido } from './periodo'
+import { DialogoDeGasto } from './components/DialogoDeGasto'
+import { DialogoDeRemocaoDeGasto } from './components/DialogoDeRemocaoDeGasto'
+import { FiltrosDeGastos } from './components/FiltrosDeGastos'
+import { LinhaDeGasto } from './components/LinhaDeGasto'
+
+/** O recorte com que a tela abre: o mês corrente — ver `./periodo.ts`. */
+const ATALHO_INICIAL: Atalho = 'esteMes'
+
+/**
+ * Gastos — `/expenses`.
+ *
+ * O dinheiro que saiu, no recorte que a pessoa escolher.
+ *
+ * ## Esta tela não é o caminho principal de entrada
+ *
+ * O eixo do produto é o **Chat**: registrar um gasto deve custar uma frase. Aqui
+ * se **vê, revisa e ajusta** o que a conversa gravou — e se lança à mão quando
+ * for mais rápido. Por isso a tela é, antes de tudo, uma lista com filtro e um
+ * total; o botão de criar existe, mas não é o herói.
+ *
+ * ## O total soma reais, sempre
+ *
+ * `valorEmBrl` é a coluna somada, nunca `valor`: um gasto em dólar e um em real
+ * na mesma soma não dariam dinheiro nenhum. Quem converte é o banco, na gravação,
+ * pela cotação do dia do gasto.
+ *
+ * ## Um `recarregar()` depois de cada mudança
+ *
+ * As modais não devolvem a linha alterada para ser costurada no estado local:
+ * elas avisam que algo mudou e a lista é buscada de novo. É uma requisição a
+ * mais, e ela paga por si — um gasto editado pode sair do período filtrado, ou
+ * mudar de categoria e sair do filtro de categoria. Decidir isso no cliente seria
+ * reescrever, em TypeScript, o `where` que o banco acabou de aplicar.
+ */
 export function GastosPage() {
-  return <ModulePlaceholder stepKeys={['expenses.placeholder.step1', 'expenses.placeholder.step2', 'expenses.placeholder.step3']} />
+  const { t } = useTranslation()
+
+  const [gastos, setGastos] = useState<Gasto[]>([])
+  const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [carregando, setCarregando] = useState(true)
+
+  // Duas falhas possíveis, dois estados. Um booleano só não serviria: a busca dos
+  // gastos roda de novo a cada filtro e limparia, sem querer, o aviso de que as
+  // categorias não vieram — e a lista seguiria mostrando "Sem categoria" em gastos
+  // que estão classificados, sem nada na tela explicando por quê.
+  const [erroDeGastos, setErroDeGastos] = useState(false)
+  const [erroDeCategorias, setErroDeCategorias] = useState(false)
+
+  const [periodo, setPeriodo] = useState<PeriodoEscolhido>(ATALHO_INICIAL)
+  const [filtro, setFiltro] = useState<FiltroDeGastos>(() => ({
+    ...periodoDe(ATALHO_INICIAL),
+    categoriaId: null,
+  }))
+
+  const [categoriasProntas, setCategoriasProntas] = useState(false)
+  const [formulario, setFormulario] = useState<Gasto | 'novo' | null>(null)
+  const [aRemover, setARemover] = useState<Gasto | null>(null)
+
+  /**
+   * As categorias são buscadas **uma vez**, e não a cada troca de filtro: elas
+   * mudam em outra tela, não aqui. Servem a três coisas — o seletor do
+   * formulário, o do filtro e o **nome da categoria em cada linha** da lista.
+   */
+  const carregarCategorias = useCallback(async () => {
+    setErroDeCategorias(false)
+    try {
+      setCategorias(await listarCategorias())
+    } catch {
+      setErroDeCategorias(true)
+    } finally {
+      // Mesmo falhando: o `true` aqui é o que libera a busca dos gastos. Sem ele,
+      // uma falha nas categorias deixaria a tela girando para sempre — e os
+      // gastos não dependem delas para serem listados.
+      setCategoriasProntas(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    void carregarCategorias()
+  }, [carregarCategorias])
+
+  const recarregar = useCallback(async () => {
+    setErroDeGastos(false)
+    setCarregando(true)
+    try {
+      setGastos(await listarGastos(filtro, categorias))
+    } catch {
+      setErroDeGastos(true)
+    } finally {
+      setCarregando(false)
+    }
+  }, [filtro, categorias])
+
+  /**
+   * A trava `categoriasProntas` evita a busca dobrada da estreia.
+   *
+   * `recarregar` depende de `categorias` (é dela que saem os ids da subárvore no
+   * filtro por categoria), então, sem a trava, a tela buscaria os gastos uma vez
+   * com a lista ainda vazia e outra assim que ela chegasse. Duas requisições, e a
+   * primeira sempre jogada fora.
+   */
+  useEffect(() => {
+    if (!categoriasProntas) return
+    void recarregar()
+  }, [categoriasProntas, recarregar])
+
+  // `somar`, e não um `reduce` com `+`: o `number` do JavaScript é binário, e
+  // acumular reais direto acaba mostrando um total um centavo fora da soma que a
+  // pessoa faz na calculadora. Ver `shared/utils/dinheiro.ts`.
+  const total = useMemo(() => somar(gastos.map((gasto) => gasto.valorEmBrl)), [gastos])
+
+  const dias = useMemo(() => agruparPorDia(gastos), [gastos])
+
+  return (
+    <>
+      {/* Sem título aqui: quem escreve "Gastos" no topo é o header, a partir de
+          `navigation.ts`. Repeti-lo daria dois <h1> na mesma tela. */}
+      <div className="space-y-6">
+        {(erroDeGastos || erroDeCategorias) && (
+          <Alert variant="destructive" className="justify-between">
+            <span className="flex items-center gap-2">
+              <TriangleAlert aria-hidden />
+              {t(erroDeGastos ? 'expenses.page.loadFailed' : 'expenses.page.categoriesFailed')}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (erroDeCategorias) void carregarCategorias()
+                if (erroDeGastos) void recarregar()
+              }}
+            >
+              {t('expenses.page.retry')}
+            </Button>
+          </Alert>
+        )}
+
+        <Card>
+          <CardContent className="p-4">
+            <FiltrosDeGastos
+              filtro={filtro}
+              onFiltro={setFiltro}
+              periodo={periodo}
+              onPeriodo={setPeriodo}
+              categorias={categorias}
+              desabilitado={carregando}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0 p-4">
+            {/* O total é o que a pessoa veio ver: fica no topo, grande, em
+                `--expense` e em `font-mono` — dígitos monoespaçados alinham na
+                vertical, e é assim que uma coluna de dinheiro se lê. */}
+            <span className="min-w-0">
+              <span className="block text-xs text-muted-foreground">
+                {t('expenses.page.count', { count: gastos.length })}
+              </span>
+              <span className="block font-mono text-2xl font-semibold text-expense">
+                {formatMoney(total)}
+              </span>
+            </span>
+
+            <Button size="sm" onClick={() => setFormulario('novo')}>
+              <Plus aria-hidden />
+              {t('expenses.page.new')}
+            </Button>
+          </CardHeader>
+
+          <CardContent className="p-4 pt-0">
+            {carregando ? (
+              <div className="flex min-h-40 items-center justify-center">
+                <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
+              </div>
+            ) : gastos.length === 0 ? (
+              <EstadoVazio onCriar={() => setFormulario('novo')} />
+            ) : (
+              <div className="space-y-4">
+                {dias.map((dia) => (
+                  <section key={dia.data} aria-label={rotuloDoDia(dia.data)}>
+                    {/* O separador de dia com o total do dia: é o que transforma
+                        uma lista corrida em extrato. Sem ele, "gastei muito na
+                        sexta?" só se responde somando as linhas de cabeça. */}
+                    <header className="flex items-baseline justify-between gap-2 px-2 pb-1">
+                      <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        {rotuloDoDia(dia.data)}
+                      </h2>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {formatMoney(dia.total)}
+                      </span>
+                    </header>
+                    <Separator />
+                    <ul>
+                      {dia.gastos.map((gasto) => (
+                        <LinhaDeGasto
+                          key={gasto.id}
+                          gasto={gasto}
+                          categorias={categorias}
+                          onEditar={setFormulario}
+                          onRemover={setARemover}
+                        />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <DialogoDeGasto
+        alvo={formulario}
+        categorias={categorias}
+        onFechar={() => setFormulario(null)}
+        onSalvo={() => {
+          // Fecha ANTES de recarregar: a modal reajusta os campos quando o alvo
+          // muda, e trocar a lista com ela ainda aberta piscaria o formulário
+          // durante a animação de saída.
+          setFormulario(null)
+          void recarregar()
+        }}
+      />
+
+      <DialogoDeRemocaoDeGasto
+        gasto={aRemover}
+        onFechar={() => setARemover(null)}
+        onRemovido={() => {
+          setARemover(null)
+          void recarregar()
+        }}
+      />
+    </>
+  )
+}
+
+/**
+ * A lista sem nada para mostrar.
+ *
+ * Não diz "nenhum gasto" e para por aí: a tela tem filtro, e a causa mais comum
+ * de uma lista vazia é o recorte, não a ausência de gastos. O texto aponta para
+ * as duas saídas — mexer no período ou registrar o primeiro — e conta que o Chat
+ * também registra, que é o caminho pretendido do sistema.
+ */
+function EstadoVazio({ onCriar }: { onCriar: () => void }) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex flex-col items-center gap-3 px-4 py-10 text-center">
+      <span className="grid size-12 place-items-center rounded-full bg-expense-muted text-expense">
+        <Receipt className="size-6" aria-hidden />
+      </span>
+      <h2 className="font-display text-lg font-semibold">{t('expenses.empty.title')}</h2>
+      <p className="max-w-prose text-sm text-muted-foreground">
+        {t('expenses.empty.description')}
+      </p>
+      <Button className="mt-1" onClick={onCriar}>
+        <Plus aria-hidden />
+        {t('expenses.empty.action')}
+      </Button>
+    </div>
+  )
+}
+
+interface DiaDeGastos {
+  /** `YYYY-MM-DD`, no fuso de quem está olhando. */
+  data: string
+  total: number
+  gastos: Gasto[]
+}
+
+/**
+ * Os gastos agrupados por dia, preservando a ordem que veio do banco (do mais
+ * recente para o mais antigo).
+ *
+ * A chave é a data **local**, e não `ocorreuEm.slice(0, 10)`: a string do banco
+ * vem em UTC, e um gasto das 22h em Brasília cairia no dia seguinte — apareceria
+ * sob um cabeçalho de amanhã, e o total daquele dia sairia errado.
+ */
+function agruparPorDia(gastos: Gasto[]): DiaDeGastos[] {
+  const dias: DiaDeGastos[] = []
+
+  for (const gasto of gastos) {
+    const data = new Date(gasto.ocorreuEm)
+    const chave = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(
+      data.getDate(),
+    ).padStart(2, '0')}`
+
+    // A lista já chega ordenada, então o dia corrente é sempre o último criado:
+    // basta olhar o fim, sem Map nem reordenação depois.
+    const atual = dias[dias.length - 1]
+    if (atual?.data === chave) atual.gastos.push(gasto)
+    else dias.push({ data: chave, total: 0, gastos: [gasto] })
+  }
+
+  // O total de cada dia sai de `somar`, depois de o grupo estar fechado — somar
+  // com `+=` dentro do laço acumularia o erro de ponto flutuante que `somar`
+  // existe para evitar.
+  for (const dia of dias) {
+    dia.total = somar(dia.gastos.map((gasto) => gasto.valorEmBrl))
+  }
+
+  return dias
+}
+
+/** `2026-08-26` → "26 de agosto de 2026" (ou o equivalente no idioma ativo). */
+function rotuloDoDia(data: string): string {
+  const [ano, mes, dia] = data.split('-').map(Number)
+  return formatDate(new Date(ano, mes - 1, dia), {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  })
 }

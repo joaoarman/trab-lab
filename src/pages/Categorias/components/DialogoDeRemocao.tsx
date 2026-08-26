@@ -14,7 +14,7 @@ import {
 } from '@/shared/components/ui/dialog'
 import { toast } from '@/shared/components/ui/sonner'
 import type { Categoria, ImpactoDeExclusao } from '@/shared/data/model'
-import { caminhoAte } from '../arvore'
+import { caminhoAte } from '@/shared/data/arvoreDeCategorias'
 import { chaveDeErroDeCategoria, preverRemocao, removerCategoria } from '../supabase'
 
 const SEPARADOR = ' › '

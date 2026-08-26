@@ -9,9 +9,24 @@
 -- (nenhuma além das que o Supabase já traz)
 
 -- ############ 2. ENUMS ############
--- (nenhum — B2C monoperfil, sem coluna de papel)
+-- -------------------------------------------------------------------------
+-- currency — as moedas aceitas em um lançamento.
+-- Domínio FECHADO de propósito: um `text` aceitaria 'R$', 'reais', 'brl' e
+-- 'BRL ' como quatro moedas diferentes. O padrão é BRL; USD é convertido para
+-- reais na gravação (ver expense_guard em functions.sql).
+-- -------------------------------------------------------------------------
+do $$
+begin
+  if to_regtype('public.currency') is null then
+    create type public.currency as enum ('BRL', 'USD');
+  end if;
+end
+$$;
+
+comment on type public.currency is 'Moedas aceitas em um lançamento. BRL é o padrão; USD é convertido para reais na gravação.';
 
 -- ############ 3. TABLES ############
+
 -- -------------------------------------------------------------------------
 -- profile — o perfil do usuário, ponte entre auth.users e o resto do sistema.
 -- Tenancy: B2C por usuário. Todo dado do sistema referencia profile.id (int).
@@ -35,6 +50,30 @@ comment on column public.profile.auth_uuid   is 'auth.users.id. Ligação com o 
 comment on column public.profile.email       is 'Espelho de auth.users.email. Escrito SÓ pelo trigger de sync.';
 comment on column public.profile.avatar_path is 'Caminho no bucket avatars (<auth_uuid>/avatar.jpg), não uma URL.';
 comment on column public.profile.deleted_at  is 'Soft-delete. Null = ativa. Preenchida = a sessão é derrubada.';
+
+-- --- ADIANTADO DA SEÇÃO 5 (dependência de DEFAULT) -----------------------
+-- `current_profile_id()` é definida aqui, ANTES das tabelas, e não só lá na
+-- seção 5. Não é duplicação por descuido: `category.profile_id` e
+-- `expense.profile_id` a usam como DEFAULT, e o PostgreSQL resolve a expressão
+-- de um DEFAULT no momento do `create table` — com ela definida só depois, um
+-- `full_schema` rodado do zero morreria na primeira tabela, com "function
+-- public.current_profile_id() does not exist".
+--
+-- Na seção 5 ela reaparece com o comentário completo. `create or replace`
+-- executado duas vezes é inofensivo: a segunda passada só reescreve a mesma
+-- função.
+create or replace function public.current_profile_id()
+returns int
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select id
+    from public.profile
+   where auth_uuid = auth.uid()
+     and deleted_at is null
+$$;
 
 -- -------------------------------------------------------------------------
 -- category — a hierarquia de categorias (auto-relacionada), por perfil.
@@ -83,6 +122,87 @@ comment on column public.category.color      is 'Etiqueta hexadecimal escolhida 
 comment on column public.category.is_active  is 'False = desativada: some da árvore principal e vai para o submenu "Desativadas". Só muda pelas RPCs.';
 comment on column public.category.deleted_at is 'Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha). Força is_active = false.';
 
+-- -------------------------------------------------------------------------
+-- expense — os gastos do usuário: o dinheiro que saiu.
+-- DINHEIRO É `numeric(12,2)` — reais e centavos na mesma coluna, como se lê. O
+-- que NÃO se usa é `float`: numeric é decimal EXATO e a soma fecha. Duas colunas
+-- de valor: `amount` é o que se gastou na moeda em que se gastou; `amount_brl` é
+-- o mesmo em reais, e é ele que TODO total soma. Quem converte é a trigger
+-- expense_guard() — o cliente não tem grant na coluna.
+-- Excluir é SOFT-DELETE (deleted_at) e excluído é sempre inativo, igual a
+-- `category`. Ver functions.sql (expense_guard, expense_remove).
+-- -------------------------------------------------------------------------
+create table if not exists public.expense (
+  id         int generated always as identity primary key,
+  -- Dono. O DEFAULT é o que permite o front inserir sem mencionar o profile_id —
+  -- ele não tem grant nesta coluna, então não pode forjar o dono.
+  profile_id int not null default public.current_profile_id()
+             references public.profile (id) on delete cascade,
+  -- Categoria do gasto. NULL = "Sem categoria": quem acabou de criar a conta
+  -- registra o primeiro gasto sem ter de criar categoria antes (regra 6).
+  -- A FK real é composta (ver expense_category_fk).
+  category_id int,
+  -- Onde/no que foi o gasto ("posto de gasolina"). A categoria diz a gaveta.
+  name       text not null,
+  -- Valor na moeda de `currency`. US$ 50,00 = 50.00. numeric, nunca float: em
+  -- ponto flutuante 0.1 + 0.2 não dá 0.3, e o extrato deixa de fechar.
+  amount     numeric(12,2) not null,
+  currency   public.currency not null default 'BRL',
+  -- Taxa de câmbio do MOMENTO do registro: quantos reais vale 1 unidade de
+  -- `currency`. Null quando já é BRL. Guardada (e não recalculada na leitura)
+  -- porque cotação é fato datado — senão o extrato muda de valor toda manhã.
+  exchange_rate numeric(14,6),
+  -- O mesmo valor em REAIS. Preenchido SÓ pela trigger.
+  amount_brl numeric(12,2) not null default 0,
+  -- Quando o gasto ACONTECEU (com hora) — não quando foi registrado: dá para
+  -- lançar hoje o almoço de ontem, e o extrato ordena pelo fato, não pelo toque.
+  occurred_at timestamptz not null default now(),
+  -- Hoje só acompanha o deleted_at. Reservada para um "arquivar" futuro.
+  is_active  boolean not null default true,
+  -- Soft-delete. Preenchida = excluído (a RLS deixa de devolver a linha).
+  deleted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint expense_name_len check (char_length(name) between 1 and 80),
+  -- Gasto é sempre positivo (negativo seria receita, que tem tabela própria). O
+  -- piso é UM CENTAVO: `> 0` deixaria passar 0.001, arredondado para zero pela
+  -- escala. O teto repete o do numeric de propósito — assim a conversão esbarra
+  -- numa mensagem traduzível, e não no "numeric field overflow" cru.
+  constraint expense_amount_range     check (amount     between 0.01 and 9999999.99),
+  constraint expense_amount_brl_range check (amount_brl between 0.01 and 9999999.99),
+  -- A coerência do trio (moeda · cotação · valor em reais) como GARANTIA, e não
+  -- só como código da trigger: um UPDATE manual esbarra aqui.
+  constraint expense_brl_has_no_rate check (
+    currency <> 'BRL' or (exchange_rate is null and amount_brl = amount)
+  ),
+  constraint expense_foreign_has_rate check (
+    currency = 'BRL' or (exchange_rate is not null and exchange_rate > 0)
+  ),
+  -- Excluído é sempre inativo — o mesmo invariante da `category`.
+  constraint expense_deleted_is_inactive check (deleted_at is null or is_active = false),
+
+  -- profile_id NOS DOIS LADOS: o gasto nunca se pendura na categoria de outra
+  -- pessoa, e isso é integridade referencial — não uma policy que se esquece.
+  -- Com category_id nulo a FK não é cobrada (MATCH SIMPLE), que é o que permite
+  -- o gasto "Sem categoria".
+  constraint expense_category_fk foreign key (category_id, profile_id)
+             references public.category (id, profile_id)
+             on update cascade on delete cascade
+);
+
+comment on table  public.expense                  is 'Gastos do usuário: o dinheiro que saiu. Valores em CENTAVOS, inteiros.';
+comment on column public.expense.profile_id       is 'Dono. Preenchido pelo DEFAULT current_profile_id() — o cliente não tem grant nesta coluna.';
+comment on column public.expense.category_id      is 'Categoria do gasto. Null = "Sem categoria" (registrar nunca trava). FK composta com profile_id: nunca atravessa perfis.';
+comment on column public.expense.name             is 'Onde/no que foi o gasto ("posto de gasolina"). A categoria diz a gaveta; isto diz o episódio.';
+comment on column public.expense.amount           is 'Valor na moeda de currency, numeric(12,2). US$ 50,00 = 50.00. numeric, nunca float: a soma tem de fechar.';
+comment on column public.expense.currency         is 'Moeda em que o gasto aconteceu. Padrão BRL.';
+comment on column public.expense.exchange_rate    is 'Taxa de câmbio do momento do registro: quantos reais vale 1 unidade de currency. Null quando currency = BRL.';
+comment on column public.expense.amount_brl       is 'O mesmo valor em REAIS. Calculado pela trigger — é a coluna que todo total do sistema soma.';
+comment on column public.expense.occurred_at      is 'Quando o gasto ACONTECEU (com hora) — não quando foi registrado. Dá para lançar hoje o almoço de ontem.';
+comment on column public.expense.is_active        is 'Hoje só acompanha o deleted_at (excluído ⇒ inativo). Reservada para um "arquivar" futuro.';
+comment on column public.expense.deleted_at       is 'Soft-delete. Preenchida = excluído (a RLS deixa de devolver a linha). Força is_active = false.';
+
 -- ############ 4. INDEXES ############
 -- --- public.category -----------------------------------------------------
 
@@ -110,6 +230,21 @@ create index if not exists category_parent_idx
 -- ela ainda está no submenu, e o caminho certo é reativá-la.
 create unique index if not exists category_sibling_name_uk
   on public.category (profile_id, coalesce(parent_id, 0), lower(name))
+  where deleted_at is null;
+
+-- --- public.expense ------------------------------------------------------
+
+-- A leitura da tela e a do Chat: "os gastos deste perfil, neste período, do mais
+-- recente para o mais antigo". As colunas na ordem em que a query as usa —
+-- filtra por perfil, recorta o período, já entrega ordenado.
+create index if not exists expense_profile_occurred_idx
+  on public.expense (profile_id, occurred_at desc)
+  where deleted_at is null;
+
+-- O filtro por categoria da tela E a contagem de category_linked_records (que
+-- decide se uma categoria pode ser excluída) — as duas percorrem por category_id.
+create index if not exists expense_category_idx
+  on public.expense (category_id)
   where deleted_at is null;
 
 -- ############ 5. FUNCTIONS ############
@@ -407,31 +542,23 @@ $$;
 
 -- -------------------------------------------------------------------------
 -- category_linked_records — quantos lançamentos apontam para estas categorias.
--- ***************** O PONTO DE EXTENSÃO DESTE MÓDULO **********************
 --
--- Quantos LANÇAMENTOS (gastos, receitas) apontam para estas categorias.
+-- É o que decide, junto com o número de descendentes, se uma categoria pode ser
+-- EXCLUÍDA ou só DESATIVADA. Uma categoria com gasto vinculado nunca é excluída:
+-- o histórico financeiro não pode ficar apontando para o vazio.
 --
--- Hoje devolve 0 porque as tabelas `expense` e `income` AINDA NÃO EXISTEM — os
--- módulos de Gastos e Receitas são placeholders. A função existe assim mesmo,
--- desde já, para que ligar essa conta seja UMA edição em UM lugar: a regra de
--- "exclui ou desativa?" já está escrita, testada e em uso.
+-- `income` entra aqui do mesmo jeito quando o módulo de Receitas for feito:
+--     + (select count(*) from public.income i
+--         where i.category_id = any (p_category_ids) and i.deleted_at is null)
+-- e mais nada — nem no banco, nem na tela, nem nos textos da modal.
 --
--- QUANDO os módulos entrarem, troque o corpo por:
---
---     select (
---       (select count(*) from public.expense e where e.category_id = any (p_category_ids))
---     + (select count(*) from public.income  i where i.category_id = any (p_category_ids))
---     )::int;
---
--- e mais nada. `category_impact` e `category_remove` passam a desativar sozinhas
--- as categorias que já têm movimento, sem nenhuma outra alteração — nem no
--- banco, nem na tela, nem nos textos da modal de confirmação.
--- *************************************************************************
+-- `deleted_at is null` no filtro: um gasto EXCLUÍDO não é vínculo. Se contasse,
+-- uma categoria usada uma única vez, num gasto já apagado, nunca mais poderia
+-- ser excluída — presa por um registro que ninguém mais enxerga.
 --
 -- Não filtra por perfil de propósito: os ids que ela recebe vêm sempre de
--- `category_subtree`, que já os limitou ao perfil de quem chamou. Ao ligar as
--- contas acima, mantenha essa premissa — nunca chame esta função com ids que não
--- tenham passado por lá.
+-- `category_subtree`, que já os limitou ao perfil de quem chamou. Mantenha essa
+-- premissa — nunca chame esta função com ids que não tenham passado por lá.
 create or replace function public.category_linked_records(p_category_ids int[])
 returns int
 language sql
@@ -439,7 +566,12 @@ stable
 security definer
 set search_path = ''
 as $$
-  select 0::int;
+  select (
+    select count(*)
+      from public.expense e
+     where e.category_id = any (p_category_ids)
+       and e.deleted_at is null
+  )::int;
 $$;
 
 -- -------------------------------------------------------------------------
@@ -588,6 +720,141 @@ begin
 end;
 $$;
 
+-- -------------------------------------------------------------------------
+-- expense_guard — a guarda de escrita do gasto (trigger). É AQUI que a
+-- conversão para reais acontece: o cliente manda valor, moeda e cotação, e
+-- quem calcula `amount_brl` é o banco.
+-- -------------------------------------------------------------------------
+-- Normaliza o nome, sustenta "excluído é sempre inativo", confere a categoria e,
+-- o principal, CALCULA O VALOR EM REAIS.
+--
+-- O cálculo mora aqui, e não no front-end, porque `amount_brl` é a coluna
+-- que todos os totais somam. Se o cliente a enviasse, bastaria uma versão antiga
+-- do app, uma chamada direta à API REST ou um bug de arredondamento para o
+-- extrato passar a mentir — e mentir de um jeito invisível, porque cada linha
+-- continuaria parecendo perfeitamente normal.
+--
+-- `security definer` porque ela precisa CONSULTAR a `category` para conferir o
+-- dono, e essa consulta não pode depender da RLS de quem está gravando.
+create or replace function public.expense_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_brl numeric;
+begin
+  new.name       := trim(new.name);
+  new.updated_at := now();
+
+  -- EXCLUÍDO É SEMPRE INATIVO. Escrito aqui (e não deixado para quem chama) para
+  -- que não exista caminho — RPC, SQL Editor, script futuro — capaz de gravar
+  -- uma linha excluída que ainda se diz ativa.
+  if new.deleted_at is not null then
+    new.is_active := false;
+  end if;
+
+  -- --- A conversão ------------------------------------------------------
+  if new.currency = 'BRL' then
+    -- Já é real: não há cotação a guardar, e o valor em reais é o próprio valor.
+    -- Zeramos a cotação em vez de recusar quem a mandou — um cliente que troca
+    -- de USD para BRL no formulário não precisa saber que tem de limpar o campo.
+    new.exchange_rate := null;
+    new.amount_brl    := new.amount;
+  else
+    if new.exchange_rate is null or new.exchange_rate <= 0 then
+      raise exception 'expense_rate_required'
+        using errcode = 'P0001',
+              hint = 'Gasto em moeda estrangeira exige a cotacao.';
+    end if;
+
+    -- `round(x, 2)` explícito, e não deixado para a escala da coluna: o produto
+    -- de um valor de 2 casas por uma cotação de 6 tem 8 casas decimais, e é aqui
+    -- que ele vira centavo — meio centavo sobe.
+    --
+    -- O teste de faixa vem ANTES de a linha chegar na coluna. É o que transforma
+    -- o "numeric field overflow" cru do Postgres numa mensagem que a tela sabe
+    -- traduzir: US$ 5.000.000 a 5,16 passa de 9.999.999,99 e o certo é dizer
+    -- isso, não estourar.
+    v_brl := round(new.amount * new.exchange_rate, 2);
+
+    if v_brl < 0.01 or v_brl > 9999999.99 then
+      raise exception 'expense_amount_out_of_range'
+        using errcode = 'P0001',
+              hint = 'O valor convertido nao cabe no limite da coluna.';
+    end if;
+
+    new.amount_brl := v_brl;
+  end if;
+
+  -- --- A categoria ------------------------------------------------------
+  -- A FK composta já impede pendurar o gasto numa categoria de outro perfil.
+  -- O que ela NÃO vê é a categoria EXCLUÍDA (soft-delete): a linha continua lá,
+  -- então a FK a aceita de bom grado, e o gasto nasceria dentro de uma gaveta
+  -- que sumiu da tela — invisível na lista por categoria, mas somando no total.
+  --
+  -- O filtro por `new.profile_id` é segurança, não só correção: esta função é
+  -- `security definer` e enxerga a tabela inteira. Sem ele, um id de categoria
+  -- alheia devolveria 'expense_category_not_found' num caso e o erro de chave
+  -- estrangeira no outro — e a diferença entre as duas mensagens já é um bit de
+  -- informação sobre um id que não é do usuário. Com o filtro, categoria de
+  -- outra pessoa é simplesmente "categoria que não existe".
+  if new.category_id is not null then
+    if not exists (
+      select 1 from public.category c
+       where c.id = new.category_id
+         and c.profile_id = new.profile_id
+         and c.deleted_at is null
+    ) then
+      raise exception 'expense_category_not_found'
+        using errcode = 'P0001',
+              hint = 'A categoria nao existe (ou foi excluida).';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+-- -------------------------------------------------------------------------
+-- expense_remove — excluir um gasto (soft-delete). A única porta de saída.
+-- -------------------------------------------------------------------------
+-- Excluir um gasto é SOFT-DELETE: `deleted_at` preenchido, `is_active` a false
+-- pela trigger, e a linha some da RLS.
+--
+-- É uma RPC, e não um `update` do cliente, porque o cliente NÃO TEM GRANT em
+-- `deleted_at` (seção 7) — de propósito. Com grant, um `update` pela API REST
+-- poderia tanto excluir quanto RESSUSCITAR um gasto zerando a coluna, e a
+-- "exclusão" viraria uma sugestão. Aqui a porta é uma só, e ela abre num
+-- sentido.
+--
+-- Diferente de `category_remove`, não há decisão a tomar: nada é pendurado num
+-- gasto, então excluir sempre exclui.
+create or replace function public.expense_remove(p_expense_id int)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_perfil int := public.current_profile_id();
+begin
+  update public.expense
+     set deleted_at = now()
+   where id = p_expense_id
+     and profile_id = v_perfil
+     and deleted_at is null;
+
+  -- Nenhuma linha tocada = o gasto não existe, já foi excluído OU é de outra
+  -- pessoa. A mensagem é a mesma nos três casos, de propósito: distinguir "não
+  -- existe" de "não é seu" confirmaria a existência de um id alheio.
+  if not found then
+    raise exception 'expense_not_found' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
 -- ############ 6. TRIGGERS ############
 -- --- auth.users ----------------------------------------------------------
 
@@ -628,6 +895,15 @@ drop trigger if exists on_category_before_write on public.category;
 create trigger on_category_before_write
   before insert or update on public.category
   for each row execute function public.category_guard();
+
+-- --- public.expense -------------------------------------------------------
+
+-- Normaliza o nome, aplica "excluído é sempre inativo", confere a categoria e —
+-- o principal — CALCULA o valor em reais a partir do valor e da cotação.
+drop trigger if exists on_expense_before_write on public.expense;
+create trigger on_expense_before_write
+  before insert or update on public.expense
+  for each row execute function public.expense_guard();
 
 -- ############ 7. VIEWS ############
 -- (nenhuma)
@@ -673,6 +949,31 @@ create policy category_update_own on public.category
 -- Sem policy de DELETE, de propósito: a saída é o soft-delete de
 -- `category_remove()`. Um DELETE de verdade cascatearia a subárvore inteira pela
 -- FK e, no futuro, levaria junto o histórico que apontasse para ela.
+
+-- --- public.expense ------------------------------------------------------
+alter table public.expense enable row level security;
+
+-- `deleted_at is null` nas policies, e não só nas queries do front: "excluído
+-- sumiu" é garantia do BANCO, não convenção que a próxima tela pode esquecer.
+drop policy if exists expense_select_own on public.expense;
+create policy expense_select_own on public.expense
+  for select to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null);
+
+drop policy if exists expense_insert_own on public.expense;
+create policy expense_insert_own on public.expense
+  for insert to authenticated
+  with check (profile_id = public.current_profile_id());
+
+drop policy if exists expense_update_own on public.expense;
+create policy expense_update_own on public.expense
+  for update to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null)
+  with check (profile_id = public.current_profile_id());
+
+-- Sem policy de DELETE, de propósito: a saída é o soft-delete de
+-- `expense_remove()`. Um DELETE de verdade levaria o histórico embora, e um
+-- extrato que perde linhas para sempre não fecha com o mês anterior.
 
 -- ############ 9. GRANTS ############
 -- --- public.profile ------------------------------------------------------
@@ -730,6 +1031,28 @@ revoke execute on function public.category_remove(int)     from public, anon;
 grant  execute on function public.category_remove(int)     to authenticated;
 
 revoke execute on function public.category_reactivate(int) from public, anon;
+
+-- --- public.expense ------------------------------------------------------
+-- Dois recortes, por dois motivos distintos:
+--   • `amount_brl` fora do grant torna a conversão da trigger INESCAPÁVEL.
+--     Com grant, o cliente mandaria "US$ 50, cotação 5,16, R$ 10,00" pela API
+--     REST e o total do mês mentiria, sem nenhuma linha estranha à vista.
+--   • `is_active` e `deleted_at` fora do grant fazem de `expense_remove()` a
+--     única saída — com grant, dava para desfazer uma exclusão zerando a coluna.
+-- `profile_id` também fica de fora: quem o preenche é o DEFAULT.
+revoke all on public.expense from anon, authenticated;
+grant select on public.expense to authenticated;
+grant insert (name, amount, currency, exchange_rate, category_id, occurred_at)
+      on public.expense to authenticated;
+grant update (name, amount, currency, exchange_rate, category_id, occurred_at)
+      on public.expense to authenticated;
+
+-- Função de trigger: ninguém chama à mão.
+revoke execute on function public.expense_guard() from public, anon, authenticated;
+
+-- O que a tela chama: só quem está logado.
+revoke execute on function public.expense_remove(int) from public, anon;
+grant  execute on function public.expense_remove(int) to authenticated;
 
 -- ############ 10. REALTIME ############
 -- (nada publicado no realtime)

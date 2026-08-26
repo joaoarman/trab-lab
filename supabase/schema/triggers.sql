@@ -43,3 +43,12 @@ drop trigger if exists on_category_before_write on public.category;
 create trigger on_category_before_write
   before insert or update on public.category
   for each row execute function public.category_guard();
+
+-- --- public.expense -------------------------------------------------------
+
+-- Normaliza o nome, aplica "excluído é sempre inativo", confere a categoria e —
+-- o principal — CALCULA o valor em reais a partir do valor e da cotação.
+drop trigger if exists on_expense_before_write on public.expense;
+create trigger on_expense_before_write
+  before insert or update on public.expense
+  for each row execute function public.expense_guard();

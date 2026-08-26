@@ -30,3 +30,18 @@ create index if not exists category_parent_idx
 create unique index if not exists category_sibling_name_uk
   on public.category (profile_id, coalesce(parent_id, 0), lower(name))
   where deleted_at is null;
+
+-- --- public.expense ------------------------------------------------------
+
+-- A leitura da tela e a do Chat: "os gastos deste perfil, neste período, do mais
+-- recente para o mais antigo". As colunas na ordem em que a query as usa —
+-- filtra por perfil, recorta o período, já entrega ordenado.
+create index if not exists expense_profile_occurred_idx
+  on public.expense (profile_id, occurred_at desc)
+  where deleted_at is null;
+
+-- O filtro por categoria da tela E a contagem de category_linked_records (que
+-- decide se uma categoria pode ser excluída) — as duas percorrem por category_id.
+create index if not exists expense_category_idx
+  on public.expense (category_id)
+  where deleted_at is null;

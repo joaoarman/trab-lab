@@ -106,10 +106,66 @@
     }
   },
   "expenses": {
-    "placeholder": {
-      "step1": "Expenses table tied to the profile, with owner RLS",
-      "step2": "List filtered by period and by category (subcategories included)",
-      "step3": "Create, edit and delete an expense from the screen"
+    "page": {
+      "count_one": "{{count}} expense in this period",
+      "count_other": "{{count}} expenses in this period",
+      "new": "New expense",
+      "loadFailed": "Could not load your expenses.",
+      "categoriesFailed": "Could not load your categories. Expenses show up without their category names.",
+      "retry": "Try again"
+    },
+    "empty": {
+      "title": "No expenses here",
+      "description": "Nothing was recorded in this period with this filter. Change the range above to look at another date — or log an expense now. In the chat, just write \"spent 20 on fuel\".",
+      "action": "Log an expense"
+    },
+    "filters": {
+      "period": "Period",
+      "from": "From",
+      "to": "To",
+      "category": "Category",
+      "allCategories": "All categories",
+      "esteMes": "This month",
+      "mesPassado": "Last month",
+      "ultimos30": "Last 30 days",
+      "esteAno": "This year",
+      "custom": "Custom"
+    },
+    "list": {
+      "actions": "Actions for {{name}}",
+      "edit": "Edit",
+      "remove": "Delete"
+    },
+    "form": {
+      "createTitle": "New expense",
+      "editTitle": "Edit expense",
+      "name": "What it was",
+      "namePlaceholder": "e.g. petrol station",
+      "amount": "Amount",
+      "amountPlaceholder": "0.00",
+      "currency": "Currency",
+      "rate": "{{currency}} rate (in reais)",
+      "refreshRate": "Fetch the current rate",
+      "rateFailed": "We couldn't fetch the exchange rate. Type it in by hand to carry on.",
+      "preview": "Comes to {{value}}",
+      "category": "Category",
+      "noCategory": "No category",
+      "occurredAt": "When it happened",
+      "created": "Expense recorded",
+      "saved": "Expense saved"
+    },
+    "remove": {
+      "title": "Delete {{name}}?",
+      "description": "{{value}} on {{date}}. The expense leaves the list and stops counting towards your totals.",
+      "confirm": "Delete",
+      "done": "Expense deleted"
+    },
+    "errors": {
+      "cotacaoObrigatoria": "Enter the exchange rate for an expense in a foreign currency.",
+      "valorForaDeFaixa": "Amount outside the accepted range. Check what you typed.",
+      "categoriaNaoEncontrada": "This category no longer exists. Reload the screen.",
+      "naoEncontrado": "This expense no longer exists. Reload the screen.",
+      "desconhecido": "Could not finish. Try again."
     }
   },
   "income": {

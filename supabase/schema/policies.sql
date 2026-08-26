@@ -56,3 +56,28 @@ create policy category_update_own on public.category
 -- Sem policy de DELETE, de propósito: a saída é o soft-delete de
 -- `category_remove()`. Um DELETE de verdade cascatearia a subárvore inteira pela
 -- FK e, no futuro, levaria junto o histórico que apontasse para ela.
+
+-- --- public.expense ------------------------------------------------------
+alter table public.expense enable row level security;
+
+-- `deleted_at is null` nas policies, e não só nas queries do front: "excluído
+-- sumiu" é garantia do BANCO, não convenção que a próxima tela pode esquecer.
+drop policy if exists expense_select_own on public.expense;
+create policy expense_select_own on public.expense
+  for select to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null);
+
+drop policy if exists expense_insert_own on public.expense;
+create policy expense_insert_own on public.expense
+  for insert to authenticated
+  with check (profile_id = public.current_profile_id());
+
+drop policy if exists expense_update_own on public.expense;
+create policy expense_update_own on public.expense
+  for update to authenticated
+  using (profile_id = public.current_profile_id() and deleted_at is null)
+  with check (profile_id = public.current_profile_id());
+
+-- Sem policy de DELETE, de propósito: a saída é o soft-delete de
+-- `expense_remove()`. Um DELETE de verdade levaria o histórico embora, e um
+-- extrato que perde linhas para sempre não fecha com o mês anterior.

@@ -16,7 +16,7 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { toast } from '@/shared/components/ui/sonner'
 import type { Categoria } from '@/shared/data/model'
-import { caminhoAte } from '../arvore'
+import { caminhoAte } from '@/shared/data/arvoreDeCategorias'
 import { chaveDeErroDeCategoria, criarCategoria, salvarCategoria } from '../supabase'
 import { corSugerida, SeletorDeCor } from './SeletorDeCor'
 

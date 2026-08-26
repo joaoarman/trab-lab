@@ -12,7 +12,7 @@ import {
 import { toast } from '@/shared/components/ui/sonner'
 import { cn } from '@/shared/lib/utils'
 import type { Categoria, NoDeCategoria } from '@/shared/data/model'
-import { caminhoAte, tamanhoDaSubarvore } from '../arvore'
+import { caminhoAte, tamanhoDaSubarvore } from '@/shared/data/arvoreDeCategorias'
 import { chaveDeErroDeCategoria, reativarCategoria } from '../supabase'
 
 const SEPARADOR = ' › '

@@ -74,3 +74,84 @@ comment on column public.category.parent_id  is 'Categoria mãe. Null = categori
 comment on column public.category.color      is 'Etiqueta hexadecimal escolhida pelo usuário (#rrggbb). É dado, não tema — o tema vive em src/theme.css.';
 comment on column public.category.is_active  is 'False = desativada: some da árvore principal e vai para o submenu "Desativadas". Só muda pelas RPCs.';
 comment on column public.category.deleted_at is 'Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha). Força is_active = false.';
+
+-- -------------------------------------------------------------------------
+-- expense — os gastos do usuário: o dinheiro que saiu.
+-- DINHEIRO É `numeric(12,2)` — reais e centavos na mesma coluna, como se lê. O
+-- que NÃO se usa é `float`: numeric é decimal EXATO e a soma fecha. Duas colunas
+-- de valor: `amount` é o que se gastou na moeda em que se gastou; `amount_brl` é
+-- o mesmo em reais, e é ele que TODO total soma. Quem converte é a trigger
+-- expense_guard() — o cliente não tem grant na coluna.
+-- Excluir é SOFT-DELETE (deleted_at) e excluído é sempre inativo, igual a
+-- `category`. Ver functions.sql (expense_guard, expense_remove).
+-- -------------------------------------------------------------------------
+create table if not exists public.expense (
+  id         int generated always as identity primary key,
+  -- Dono. O DEFAULT é o que permite o front inserir sem mencionar o profile_id —
+  -- ele não tem grant nesta coluna, então não pode forjar o dono.
+  profile_id int not null default public.current_profile_id()
+             references public.profile (id) on delete cascade,
+  -- Categoria do gasto. NULL = "Sem categoria": quem acabou de criar a conta
+  -- registra o primeiro gasto sem ter de criar categoria antes (regra 6).
+  -- A FK real é composta (ver expense_category_fk).
+  category_id int,
+  -- Onde/no que foi o gasto ("posto de gasolina"). A categoria diz a gaveta.
+  name       text not null,
+  -- Valor na moeda de `currency`. US$ 50,00 = 50.00. numeric, nunca float: em
+  -- ponto flutuante 0.1 + 0.2 não dá 0.3, e o extrato deixa de fechar.
+  amount     numeric(12,2) not null,
+  currency   public.currency not null default 'BRL',
+  -- Taxa de câmbio do MOMENTO do registro: quantos reais vale 1 unidade de
+  -- `currency`. Null quando já é BRL. Guardada (e não recalculada na leitura)
+  -- porque cotação é fato datado — senão o extrato muda de valor toda manhã.
+  exchange_rate numeric(14,6),
+  -- O mesmo valor em REAIS. Preenchido SÓ pela trigger.
+  amount_brl numeric(12,2) not null default 0,
+  -- Quando o gasto ACONTECEU (com hora) — não quando foi registrado: dá para
+  -- lançar hoje o almoço de ontem, e o extrato ordena pelo fato, não pelo toque.
+  occurred_at timestamptz not null default now(),
+  -- Hoje só acompanha o deleted_at. Reservada para um "arquivar" futuro.
+  is_active  boolean not null default true,
+  -- Soft-delete. Preenchida = excluído (a RLS deixa de devolver a linha).
+  deleted_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+
+  constraint expense_name_len check (char_length(name) between 1 and 80),
+  -- Gasto é sempre positivo (negativo seria receita, que tem tabela própria). O
+  -- piso é UM CENTAVO: `> 0` deixaria passar 0.001, arredondado para zero pela
+  -- escala. O teto repete o do numeric de propósito — assim a conversão esbarra
+  -- numa mensagem traduzível, e não no "numeric field overflow" cru.
+  constraint expense_amount_range     check (amount     between 0.01 and 9999999.99),
+  constraint expense_amount_brl_range check (amount_brl between 0.01 and 9999999.99),
+  -- A coerência do trio (moeda · cotação · valor em reais) como GARANTIA, e não
+  -- só como código da trigger: um UPDATE manual esbarra aqui.
+  constraint expense_brl_has_no_rate check (
+    currency <> 'BRL' or (exchange_rate is null and amount_brl = amount)
+  ),
+  constraint expense_foreign_has_rate check (
+    currency = 'BRL' or (exchange_rate is not null and exchange_rate > 0)
+  ),
+  -- Excluído é sempre inativo — o mesmo invariante da `category`.
+  constraint expense_deleted_is_inactive check (deleted_at is null or is_active = false),
+
+  -- profile_id NOS DOIS LADOS: o gasto nunca se pendura na categoria de outra
+  -- pessoa, e isso é integridade referencial — não uma policy que se esquece.
+  -- Com category_id nulo a FK não é cobrada (MATCH SIMPLE), que é o que permite
+  -- o gasto "Sem categoria".
+  constraint expense_category_fk foreign key (category_id, profile_id)
+             references public.category (id, profile_id)
+             on update cascade on delete cascade
+);
+
+comment on table  public.expense                  is 'Gastos do usuário: o dinheiro que saiu. Valores em CENTAVOS, inteiros.';
+comment on column public.expense.profile_id       is 'Dono. Preenchido pelo DEFAULT current_profile_id() — o cliente não tem grant nesta coluna.';
+comment on column public.expense.category_id      is 'Categoria do gasto. Null = "Sem categoria" (registrar nunca trava). FK composta com profile_id: nunca atravessa perfis.';
+comment on column public.expense.name             is 'Onde/no que foi o gasto ("posto de gasolina"). A categoria diz a gaveta; isto diz o episódio.';
+comment on column public.expense.amount           is 'Valor na moeda de currency, numeric(12,2). US$ 50,00 = 50.00. numeric, nunca float: a soma tem de fechar.';
+comment on column public.expense.currency         is 'Moeda em que o gasto aconteceu. Padrão BRL.';
+comment on column public.expense.exchange_rate    is 'Taxa de câmbio do momento do registro: quantos reais vale 1 unidade de currency. Null quando currency = BRL.';
+comment on column public.expense.amount_brl       is 'O mesmo valor em REAIS. Calculado pela trigger — é a coluna que todo total do sistema soma.';
+comment on column public.expense.occurred_at      is 'Quando o gasto ACONTECEU (com hora) — não quando foi registrado. Dá para lançar hoje o almoço de ontem.';
+comment on column public.expense.is_active        is 'Hoje só acompanha o deleted_at (excluído ⇒ inativo). Reservada para um "arquivar" futuro.';
+comment on column public.expense.deleted_at       is 'Soft-delete. Preenchida = excluído (a RLS deixa de devolver a linha). Força is_active = false.';

@@ -55,17 +55,22 @@ export const NAV_ITEMS: NavItem[] = [
     subtitleKey: 'nav.chatSubtitle',
     icon: MessageCircle,
   },
+  // A SETA SEGUE O DINHEIRO, e não a lista: gasto é o que **sai** (para baixo),
+  // receita é o que **entra** (para cima). É o mesmo sentido que o par
+  // `--expense`/`--income` do tema já comunica pela cor — se o ícone apontar para
+  // o outro lado, os dois sinais passam a brigar e o item de menu fica ambíguo
+  // justamente para quem bate o olho sem ler o rótulo.
   {
     to: '/expenses',
     labelKey: 'nav.expenses',
     subtitleKey: 'nav.expensesSubtitle',
-    icon: ArrowUpCircle,
+    icon: ArrowDownCircle,
   },
   {
     to: '/income',
     labelKey: 'nav.income',
     subtitleKey: 'nav.incomeSubtitle',
-    icon: ArrowDownCircle,
+    icon: ArrowUpCircle,
   },
   {
     to: '/categories',
