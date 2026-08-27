@@ -11,8 +11,11 @@ export function Header({ onAbrirMenu }: { onAbrirMenu: () => void }) {
   const { pathname } = useLocation()
   const ativo = findActiveItem(pathname)
 
+  // O pt-[env(safe-area-inset-top)] é 0 no navegador e vira a altura do relógio
+  // quando o app está instalado (status bar translúcida): sem ele, o título ficaria
+  // por baixo da hora e da bateria no iPhone.
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
+    <header className="sticky top-0 z-30 border-b border-border bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-content items-center gap-3 px-content">
         <Button
           variant="ghost"

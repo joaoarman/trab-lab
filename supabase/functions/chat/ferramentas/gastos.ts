@@ -11,8 +11,8 @@ import {
   limitesDoPeriodo,
   periodoOpcional,
   moeda,
+  instanteDoFato,
   numero,
-  paraIso,
   texto,
   traduzirErroDoBanco,
 } from './comum.ts'
@@ -145,7 +145,7 @@ const registrar_gasto: Ferramenta = {
     const ocorreuEm =
       texto(args.ocorreu_em, 25) === null
         ? new Date().toISOString()
-        : paraIso(String(args.ocorreu_em), ctx.fusoEmMinutos)
+        : instanteDoFato(args.ocorreu_em, ctx.fusoEmMinutos)
 
     if (!ocorreuEm) throw new Error('Data inválida. Use AAAA-MM-DD ou AAAA-MM-DDTHH:mm.')
     if (new Date(ocorreuEm).getTime() > Date.now() + 60_000) {
@@ -260,7 +260,7 @@ const editar_gasto: Ferramenta = {
     }
 
     if (args.ocorreu_em !== undefined) {
-      const quando = paraIso(String(args.ocorreu_em), ctx.fusoEmMinutos)
+      const quando = instanteDoFato(args.ocorreu_em, ctx.fusoEmMinutos)
       if (!quando) throw new Error('Data inválida. Use AAAA-MM-DD ou AAAA-MM-DDTHH:mm.')
       if (new Date(quando).getTime() > Date.now() + 60_000) {
         throw new Error('Não dá para datar um gasto no futuro.')

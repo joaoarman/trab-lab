@@ -16,6 +16,7 @@ import { DiagramaDeCasosDeUso } from './components/DiagramaDeCasosDeUso'
 import { DiagramaER } from './components/DiagramaER'
 import { TabelaDeRequisitos } from './components/TabelaDeRequisitos'
 import { TabelaDeComparacao } from './components/TabelaDeComparacao'
+import { TelefoneComOChat, TelefoneNaTelaDeInicio } from './components/TelefoneComOApp'
 import { ARVORE_NO_PROMPT, BASE_PROMPT_REAL, CONTEXTO_DA_CONVERSA } from './basePrompt'
 import {
   ETAPAS_DE_VALIDACAO,
@@ -393,6 +394,36 @@ function Telas() {
   )
 }
 
+function Pwa() {
+  const { t } = useTranslation()
+  const cartoes = t('slides.pwa.cartoes', { returnObjects: true }) as {
+    title: string
+    body: string
+  }[]
+
+  return (
+    <Slide
+      eyebrow={t('slides.pwa.eyebrow')}
+      title={t('slides.pwa.title')}
+    >
+      <div className="flex flex-col items-center gap-5 lg:flex-row lg:items-center lg:gap-8">
+        <div className="flex shrink-0 items-start gap-4 sm:gap-5">
+          <TelefoneNaTelaDeInicio legenda={t('slides.pwa.telaDeInicio')} />
+          <TelefoneComOChat legenda={t('slides.pwa.telaDoChat')} />
+        </div>
+
+        <div className="grid min-w-0 flex-1 gap-2.5 sm:grid-cols-2 lg:gap-3">
+          {cartoes.map((cartao) => (
+            <Cartao key={cartao.title} title={cartao.title} className="gap-1 p-3 sm:p-4">
+              {cartao.body}
+            </Cartao>
+          ))}
+        </div>
+      </div>
+    </Slide>
+  )
+}
+
 function Validacao() {
   const { t } = useTranslation()
   return (
@@ -565,6 +596,7 @@ export const SLIDES: SlideDoDeck[] = [
   { id: 'banco', titleKey: 'slides.banco.title', render: () => <Banco /> },
   { id: 'arquitetura', titleKey: 'slides.arquitetura.title', render: () => <Arquitetura /> },
   { id: 'telas', titleKey: 'slides.telas.title', render: () => <Telas /> },
+  { id: 'pwa', titleKey: 'slides.pwa.title', render: () => <Pwa /> },
   { id: 'validacao', titleKey: 'slides.validacao.title', render: () => <Validacao /> },
   { id: 'concorrentes', titleKey: 'slides.concorrentes.title', render: () => <Concorrentes /> },
   { id: 'comparacao', titleKey: 'slides.comparacao.title', render: () => <Comparacao /> },

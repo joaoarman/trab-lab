@@ -1,0 +1,21 @@
+-- =========================================================================
+-- 09 · PWA, cadastro desligado no front e correções do chat
+-- 27/08/2026
+-- =========================================================================
+--
+-- Sem alterações de banco nesta implementação. Nenhuma migration nova, nenhuma
+-- tabela, coluna, policy ou grant mudou, e o acesso de ninguém mudou.
+--
+-- ATENÇÃO: esta leva mexe na Edge Function `chat` (a hora do gasto), e isso NÃO
+-- é SQL. Depois de commitar, é preciso rodar:
+--
+--     supabase functions deploy chat
+--
+-- Sem o deploy, um gasto registrado por conversa continua caindo à meia-noite
+-- em vez da hora em que aconteceu.
+--
+-- O cadastro foi desligado apenas no FRONT-END. O `signUp` do GoTrue segue
+-- aberto de propósito, então não há nada a rodar por causa disso. Para fechar
+-- também no servidor, é no painel do Supabase (Authentication → Providers →
+-- Email → Allow new users to sign up), e não por SQL.
+-- =========================================================================

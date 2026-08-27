@@ -3,8 +3,13 @@ import { AppLayout } from '@/shared/components/layout/AppLayout'
 import { AuthProvider } from '@/shared/context/AuthContext'
 import { Toaster } from '@/shared/components/ui/sonner'
 import { LoginPage } from '@/pages/Auth/LoginPage'
-import { SignupPage } from '@/pages/Auth/SignupPage'
-import { ROTA_INICIAL, RotaProtegida, RotaPublica } from '@/pages/Auth/components/RotaProtegida'
+import {
+  ROTA_DE_CADASTRO,
+  ROTA_DE_LOGIN,
+  ROTA_INICIAL,
+  RotaProtegida,
+  RotaPublica,
+} from '@/pages/Auth/components/RotaProtegida'
 import { AccountPage } from '@/pages/Account/AccountPage'
 import { ChatPage } from '@/pages/Chat/ChatPage'
 import { FaturaPage } from '@/pages/Fatura/FaturaPage'
@@ -21,7 +26,7 @@ export function App() {
         <Routes>
           <Route element={<RotaPublica />}>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path={ROTA_DE_CADASTRO} element={<Navigate to={ROTA_DE_LOGIN} replace />} />
           </Route>
 
           <Route element={<RotaProtegida />}>

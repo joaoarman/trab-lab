@@ -1,0 +1,16 @@
+{
+  "name": "Self OS",
+  "short_name": "Self OS",
+  "description": "Registre e consulte seus gastos e receitas conversando.",
+  "lang": "pt-BR",
+  "start_url": "/chat",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0B7F5C",
+  "background_color": "#141110",
+  "icons": [
+    { "src": "/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

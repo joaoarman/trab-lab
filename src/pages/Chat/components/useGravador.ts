@@ -10,13 +10,36 @@ export type EstadoDaGravacao = 'parado' | 'gravando' | 'pausado'
 
 export type ErroDeGravacao =
   | 'permission_denied'
+  | 'permission_system'
+  | 'insecure_context'
+  | 'no_microphone'
+  | 'microphone_busy'
   | 'unsupported'
+  | 'failed'
 
 function formatoSuportado(): string | undefined {
   if (typeof MediaRecorder === 'undefined') return undefined
 
   const candidatos = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus']
   return candidatos.find((tipo) => MediaRecorder.isTypeSupported(tipo))
+}
+
+async function permissaoDoMicrofone(): Promise<PermissionState | null> {
+  try {
+    return (await navigator.permissions.query({ name: 'microphone' as PermissionName })).state
+  } catch {
+    return null
+  }
+}
+
+async function motivoDaFalha(falha: unknown): Promise<ErroDeGravacao> {
+  const nome = falha instanceof DOMException ? falha.name : ''
+
+  if (nome === 'NotFoundError' || nome === 'OverconstrainedError') return 'no_microphone'
+  if (nome === 'NotReadableError' || nome === 'AbortError') return 'microphone_busy'
+  if (nome !== 'NotAllowedError' && nome !== 'SecurityError') return 'failed'
+
+  return (await permissaoDoMicrofone()) === 'denied' ? 'permission_denied' : 'permission_system'
 }
 
 export function useGravador() {
@@ -94,6 +117,11 @@ export function useGravador() {
   const iniciar = useCallback(async () => {
     setErro(null)
 
+    if (!window.isSecureContext) {
+      setErro('insecure_context')
+      return false
+    }
+
     const formato = formatoSuportado()
     if (!formato || !navigator.mediaDevices?.getUserMedia) {
       setErro('unsupported')
@@ -105,8 +133,8 @@ export function useGravador() {
       entrada = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       })
-    } catch {
-      setErro('permission_denied')
+    } catch (falha) {
+      setErro(await motivoDaFalha(falha))
       return false
     }
 

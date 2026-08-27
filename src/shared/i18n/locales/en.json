@@ -125,8 +125,13 @@
       "playback": "Listen to the recording"
     },
     "recording": {
-      "permission_denied": "I couldn't reach the microphone. Allow it in your browser and try again.",
-      "unsupported": "This browser can't record audio. Type your message instead."
+      "permission_denied": "The microphone is blocked for this site. Open the padlock in the address bar, set the microphone to “Allow” and reload the page.",
+      "permission_system": "The browser never even asked — the block is at the system level. On macOS: System Settings › Privacy & Security › Microphone, turn the browser on and reopen it.",
+      "insecure_context": "Recording audio only works on a secure address. Open the app over localhost or https.",
+      "no_microphone": "No microphone found. Plug one in and try again.",
+      "microphone_busy": "Another app is using the microphone. Close it and try again.",
+      "unsupported": "This browser can't record audio. Type your message instead.",
+      "failed": "I couldn't start recording. Try again, or type your message instead."
     },
     "welcome": {
       "title": "Just say it, I'll write it down",
@@ -776,6 +781,30 @@
         "account": "My account",
         "accountSubtitle": "Profile, photo, password, theme and language"
       }
+    },
+    "pwa": {
+      "eyebrow": "Differentiator",
+      "title": "A website that is also an app: PWA",
+      "cartoes": [
+        {
+          "title": "What a PWA is",
+          "body": "Progressive Web App: a web application the browser knows how to install."
+        },
+        {
+          "title": "Installing is optional",
+          "body": "The link opens the whole system on any device, with nothing to download and no app store."
+        },
+        {
+          "title": "It opens straight into the chat",
+          "body": "The shortcut points at the conversation. Open, say the expense, minimise."
+        },
+        {
+          "title": "A single codebase",
+          "body": "One project, not three: the same code on Android, on iPhone and in the browser."
+        }
+      ],
+      "telaDeInicio": "On the home screen, next to the everyday apps",
+      "telaDoChat": "Opened from the icon: full screen, no address bar"
     },
     "validacao": {
       "eyebrow": "Validation",

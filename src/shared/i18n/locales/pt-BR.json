@@ -125,8 +125,13 @@
       "playback": "Ouvir o que foi gravado"
     },
     "recording": {
-      "permission_denied": "Não consegui acessar o microfone. Libere a permissão no navegador e tente de novo.",
-      "unsupported": "Este navegador não grava áudio. Escreva a mensagem por aqui."
+      "permission_denied": "O microfone está bloqueado para este site. Clique no cadeado da barra de endereço, mude o microfone para “Permitir” e recarregue a página.",
+      "permission_system": "O navegador nem chegou a pedir permissão — quem está bloqueando é o sistema. No macOS: Ajustes do Sistema › Privacidade e Segurança › Microfone, ligue o navegador e abra-o de novo.",
+      "insecure_context": "Gravar áudio só funciona em endereço seguro. Abra o app por localhost ou https.",
+      "no_microphone": "Nenhum microfone encontrado. Conecte um e tente de novo.",
+      "microphone_busy": "O microfone está em uso por outro programa. Feche-o e tente de novo.",
+      "unsupported": "Este navegador não grava áudio. Escreva a mensagem por aqui.",
+      "failed": "Não consegui iniciar a gravação. Tente de novo ou escreva a mensagem por aqui."
     },
     "welcome": {
       "title": "Fale, que eu anoto",
@@ -776,6 +781,30 @@
         "account": "Minha conta",
         "accountSubtitle": "Perfil, foto, senha, tema e idioma"
       }
+    },
+    "pwa": {
+      "eyebrow": "Diferencial",
+      "title": "Um site que também é aplicativo: PWA",
+      "cartoes": [
+        {
+          "title": "O que é um PWA",
+          "body": "Progressive Web App: uma aplicação web que o navegador sabe instalar."
+        },
+        {
+          "title": "Instalar é opcional",
+          "body": "O link abre o sistema inteiro em qualquer aparelho, sem baixar nada e sem passar por loja."
+        },
+        {
+          "title": "Abre direto no chat",
+          "body": "O atalho aponta para a conversa. Abrir, dizer o gasto, minimizar."
+        },
+        {
+          "title": "Uma base de código só",
+          "body": "Um projeto, e não três: o mesmo código no Android, no iPhone e no navegador."
+        }
+      ],
+      "telaDeInicio": "Na tela de início, junto dos apps do dia a dia",
+      "telaDoChat": "Aberto pelo ícone: tela cheia, sem barra de endereço"
     },
     "validacao": {
       "eyebrow": "Validação",

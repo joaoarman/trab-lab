@@ -1,11 +1,11 @@
 import {
   type Ferramenta,
   dinheiro,
+  instanteDoFato,
   inteiro,
   periodoOpcional,
   moeda,
   numero,
-  paraIso,
   texto,
   traduzirErroDoBanco,
 } from './comum.ts'
@@ -92,7 +92,7 @@ const registrar_receita: Ferramenta = {
     const recebidaEm =
       texto(args.recebida_em, 25) === null
         ? new Date().toISOString()
-        : paraIso(String(args.recebida_em), ctx.fusoEmMinutos)
+        : instanteDoFato(args.recebida_em, ctx.fusoEmMinutos)
 
     if (!recebidaEm) throw new Error('Data inválida. Use AAAA-MM-DD ou AAAA-MM-DDTHH:mm.')
     if (new Date(recebidaEm).getTime() > Date.now() + 60_000) {
@@ -191,7 +191,7 @@ const editar_receita: Ferramenta = {
     }
 
     if (args.recebida_em !== undefined) {
-      const quando = paraIso(String(args.recebida_em), ctx.fusoEmMinutos)
+      const quando = instanteDoFato(args.recebida_em, ctx.fusoEmMinutos)
       if (!quando) throw new Error('Data inválida. Use AAAA-MM-DD ou AAAA-MM-DDTHH:mm.')
       if (new Date(quando).getTime() > Date.now() + 60_000) {
         throw new Error('Não dá para datar uma receita no futuro.')

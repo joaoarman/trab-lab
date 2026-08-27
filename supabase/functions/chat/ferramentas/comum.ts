@@ -87,7 +87,7 @@ export function traduzirErroDoBanco(erro: { message?: string; code?: string } | 
   throw new Error('Não foi possível concluir a operação no banco.')
 }
 
-export function paraIso(local: string, fusoEmMinutos: number): string | null {
+function paraIso(local: string, fusoEmMinutos: number): string | null {
   const casado = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(local.trim())
   if (!casado) return null
 
@@ -104,6 +104,38 @@ export function paraIso(local: string, fusoEmMinutos: number): string | null {
   if (Number.isNaN(comoSeFosseUtc)) return null
 
   return new Date(comoSeFosseUtc + fusoEmMinutos * 60_000).toISOString()
+}
+
+/** O relógio de parede do usuário: um Date cujos campos UTC são a hora LOCAL dele. */
+export function agoraLocal(fusoEmMinutos: number): Date {
+  return new Date(Date.now() - fusoEmMinutos * 60_000)
+}
+
+export function diaLocal(fusoEmMinutos: number): string {
+  return agoraLocal(fusoEmMinutos).toISOString().slice(0, 10)
+}
+
+export function horaLocal(fusoEmMinutos: number): string {
+  return agoraLocal(fusoEmMinutos).toISOString().slice(11, 16)
+}
+
+/**
+ * O instante que o modelo informou. `null` = não deu para ler (quem decide o que
+ * fazer com isso é a ferramenta: no registro, vira agora; na edição, vira erro).
+ *
+ * Data seca do dia de HOJE é agora, e não 00:00. O modelo tem a data de hoje no
+ * contexto e a preenche por reflexo, mas a meia-noite carimbada no cartão é uma
+ * hora que ninguém viveu. Data seca de um dia passado continua 00:00 — ali a
+ * hora é mesmo desconhecida, e inventar uma seria pior.
+ */
+export function instanteDoFato(bruto: unknown, fusoEmMinutos: number): string | null {
+  const informado = texto(bruto, 25)
+  if (informado === null) return null
+
+  const seco = /^\d{4}-\d{2}-\d{2}$/.test(informado)
+  if (seco && informado === diaLocal(fusoEmMinutos)) return new Date().toISOString()
+
+  return paraIso(informado, fusoEmMinutos)
 }
 
 export const SEM_PERIODO = { de: null, ate: null } as const

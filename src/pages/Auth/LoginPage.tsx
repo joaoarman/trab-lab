@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
@@ -9,7 +8,6 @@ import { Label } from '@/shared/components/ui/label'
 import { PasswordInput } from '@/shared/components/ui/password-input'
 import { chaveDeErroDeAuth } from '@/shared/lib/authErrors'
 import { AuthShell, ErroDoFormulario } from './components/AuthShell'
-import { ROTA_DE_CADASTRO } from './components/RotaProtegida'
 import { entrar } from './supabase'
 
 export function LoginPage() {
@@ -35,14 +33,6 @@ export function LoginPage() {
     <AuthShell
       titulo={t('auth.login.title')}
       descricao={t('auth.login.subtitle')}
-      rodape={
-        <>
-          {t('auth.login.noAccount')}{' '}
-          <Link to={ROTA_DE_CADASTRO} className="font-medium text-primary underline-offset-4 hover:underline">
-            {t('auth.login.goToSignup')}
-          </Link>
-        </>
-      }
     >
       <form onSubmit={aoEnviar} className="space-y-4">
         <div className="space-y-2">

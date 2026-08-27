@@ -18,6 +18,7 @@ const CATEGORIAS_DE_EXEMPLO: CategoriaDoContexto[] = [
 const [base, contexto, arvore] = montarSystemPrompt({
   nome: 'João',
   hoje: '2026-08-27',
+  agora: '17:41',
   diaDaSemana: 'quinta-feira',
   idioma: 'pt-BR',
   categorias: CATEGORIAS_DE_EXEMPLO,

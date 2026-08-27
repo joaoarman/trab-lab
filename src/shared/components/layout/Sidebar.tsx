@@ -131,7 +131,7 @@ export function Sidebar({ aberta, onFechar }: { aberta: boolean; onFechar: () =>
           aria-label={t('nav.primaryLabel')}
           tabIndex={-1}
           className={cn(
-            'absolute inset-y-0 left-0 flex w-[17rem] max-w-[85%] flex-col border-r border-border bg-card shadow-xl outline-none transition-transform duration-200 ease-out',
+            'absolute inset-y-0 left-0 flex w-[17rem] max-w-[85%] flex-col border-r border-border bg-card pt-[env(safe-area-inset-top)] shadow-xl outline-none transition-transform duration-200 ease-out',
             aberta ? 'translate-x-0' : '-translate-x-full',
           )}
         >

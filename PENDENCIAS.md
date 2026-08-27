@@ -261,7 +261,52 @@ Users e `deleted_at` no perfil.
 
 ---
 
-## 5. Menores
+## 5. Cadastro desligado no front-end (modo apresentação)
+
+**O que é.** A tela de criar conta existe (`src/pages/Auth/SignupPage.tsx`), mas
+**não tem rota nem link**. `/signup` só redireciona para `/login`.
+
+**Por que fica assim.** É temporário e não é decisão de produto: durante a
+apresentação da disciplina, ninguém da turma deve conseguir abrir uma conta no
+sistema enquanto ele está na tela.
+
+**O que NÃO foi feito.** O back-end continua aberto — `cadastrar()` no
+`src/pages/Auth/supabase.ts`, o `signUp` do GoTrue e a trigger `handle_new_user`
+seguem funcionando. Quem souber chamar a API cria conta. É bloqueio de
+**apresentação**, não de segurança; para fechar de verdade, é
+`Authentication → Providers → Email → Allow new users to sign up` desligado no
+painel do Supabase (ou `enable_signup = false` no `supabase/config.toml`).
+
+**Como religar** (três edições, nenhuma no banco):
+
+1. `src/App.tsx` — trocar o redirect pela tela de novo:
+   ```tsx
+   import { SignupPage } from '@/pages/Auth/SignupPage'
+   ...
+   <Route path={ROTA_DE_CADASTRO} element={<SignupPage />} />
+   ```
+   Se `ROTA_DE_LOGIN` ficar sem uso no arquivo, tirar do import.
+2. `src/pages/Auth/LoginPage.tsx` — devolver o rodapé com o link (as chaves
+   `auth.login.noAccount` e `auth.login.goToSignup` continuam nos dois idiomas):
+   ```tsx
+   import { Link } from 'react-router-dom'
+   import { ROTA_DE_CADASTRO } from './components/RotaProtegida'
+   ...
+   rodape={
+     <>
+       {t('auth.login.noAccount')}{' '}
+       <Link to={ROTA_DE_CADASTRO} className="font-medium text-primary underline-offset-4 hover:underline">
+         {t('auth.login.goToSignup')}
+       </Link>
+     </>
+   }
+   ```
+
+O `rodape` do `AuthShell` é opcional desde então; pode continuar assim.
+
+---
+
+## 6. Menores
 
 - **MFA/2FA (TOTP).** Nada implementado. Entraria no card de Segurança.
 - **Anonimização de PII no soft-delete (LGPD).** Hoje o soft-delete só marca a

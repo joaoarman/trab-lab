@@ -20,7 +20,7 @@ import {
   montarSystemPrompt,
 } from './prompts.ts'
 import type { CategoriaDoContexto, UsoDaConversa } from './prompts.ts'
-import { FERRAMENTA_DE_RECUSA, FERRAMENTAS, SCHEMAS } from './ferramentas/index.ts'
+import { FERRAMENTA_DE_RECUSA, FERRAMENTAS, SCHEMAS, horaLocal } from './ferramentas/index.ts'
 import type { CategoriaConhecida, ContextoDaFerramenta, Recibo } from './ferramentas/index.ts'
 
 const CORS_HEADERS = {
@@ -153,6 +153,7 @@ Deno.serve(async (request) => {
   const systemPrompt = montarSystemPrompt({
     nome: (perfil.data?.full_name ?? '').split(' ')[0] ?? '',
     hoje,
+    agora: horaLocal(fusoEmMinutos),
     diaDaSemana,
     idioma,
     categorias: arvore.map(

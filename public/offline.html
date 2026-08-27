@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Self OS</title>
+    <!-- Página do service worker: aparece só quando o app abre sem rede. É a
+         ÚNICA tela do sistema com texto fixo e sem i18n, e não dá para ser
+         diferente: ela existe justamente quando o app (e o i18n com ele) não
+         chegou a carregar. Por isso está nos dois idiomas de uma vez. -->
+    <style>
+      :root { color-scheme: light dark; }
+      body {
+        margin: 0; min-height: 100vh; display: grid; place-items: center;
+        padding: 2rem; text-align: center; background: #faf8f5; color: #1f1b18;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      @media (prefers-color-scheme: dark) { body { background: #141110; color: #f5f1ea; } }
+      .marca {
+        width: 56px; height: 56px; border-radius: 16px; background: #0B7F5C;
+        display: grid; place-items: center; margin: 0 auto 1.5rem;
+      }
+      h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+      p { margin: 0; opacity: .7; line-height: 1.5; max-width: 32ch; }
+      p + p { margin-top: .75rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="marca" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
+          <path d="M12 18V6" />
+        </svg>
+      </div>
+      <h1>Sem conexão</h1>
+      <p>O Self OS precisa de internet para registrar e consultar. Assim que a rede voltar, é só recarregar.</p>
+      <p lang="en">Self OS needs a connection to record and query. Reload once you are back online.</p>
+    </main>
+  </body>
+</html>

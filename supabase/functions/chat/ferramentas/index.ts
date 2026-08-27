@@ -14,6 +14,7 @@ export const FERRAMENTAS: Record<string, Ferramenta> = {
 export const SCHEMAS = Object.values(FERRAMENTAS).map((ferramenta) => ferramenta.schema)
 
 export { FERRAMENTA_DE_RECUSA } from './escopo.ts'
+export { horaLocal } from './comum.ts'
 export type {
   CategoriaConhecida,
   ContextoDaFerramenta,

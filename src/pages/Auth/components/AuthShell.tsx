@@ -26,7 +26,7 @@ export function AuthShell({
   titulo: string
   descricao: string
   children: ReactNode
-  rodape: ReactNode
+  rodape?: ReactNode
 }) {
   const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
@@ -94,7 +94,7 @@ export function AuthShell({
 
           {children}
 
-          <div className="mt-6 text-center text-sm text-muted-foreground">{rodape}</div>
+          {rodape && <div className="mt-6 text-center text-sm text-muted-foreground">{rodape}</div>}
         </div>
       </div>
     </div>

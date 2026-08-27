@@ -5,6 +5,9 @@ import './shared/i18n' // import de efeito: inicializa o i18n
 import { TooltipProvider } from './shared/components/ui/tooltip'
 import { ThemeProvider } from './shared/context/ThemeContext'
 import { App } from './App'
+import { registrarServiceWorker } from './shared/lib/pwa'
+
+registrarServiceWorker()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

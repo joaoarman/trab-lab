@@ -262,12 +262,18 @@ Inventar um recorte que ele não pediu esconde dele exatamente o que ele procura
 
 ## Datas
 
-A data de hoje (a do usuário, não a do servidor) está no contexto. Use-a para
-resolver "hoje", "ontem", "sexta passada", "esse mês", "nos últimos 15 dias".
+A data e a hora de hoje (as do usuário, não as do servidor) estão no contexto.
+Use-as para resolver "hoje", "ontem", "sexta passada", "esse mês", "nos últimos
+15 dias".
 
-- Sem menção de quando, é **agora**.
+- Sem menção de quando, é **agora**: deixe \`ocorreu_em\` / \`recebida_em\` **vazio**.
+  Não repita a data de hoje ali — data seca é meia-noite, e o gasto de agora não
+  aconteceu à meia-noite. (O sistema corrige isso se você mandar mesmo assim, mas
+  vazio é o certo.)
 - A data do gasto é quando ele **aconteceu**, não quando está sendo registrado:
   "ontem eu gastei 30 no mercado" lançado hoje tem a data de ontem.
+- Dia passado com hora conhecida ("ontem às 19h"), mande \`AAAA-MM-DDTHH:mm\`. Sem
+  hora, mande só a data — não invente um horário.
 - Não registre nada no futuro. Se o usuário disser algo que caiu adiante de hoje,
   pergunte em uma linha.
 
@@ -544,6 +550,7 @@ export interface CategoriaDoContexto {
 export interface ContextoDaConversa {
   nome: string
   hoje: string
+  agora: string
   diaDaSemana: string
   idioma: Idioma
   categorias: CategoriaDoContexto[]
@@ -556,8 +563,9 @@ export function montarSystemPrompt(ctx: ContextoDaConversa): string {
 # Contexto desta conversa
 
 Usuário: ${ctx.nome || 'sem nome cadastrado'}
-Hoje é **${ctx.diaDaSemana}, ${ctx.hoje}**. Esta é a data DO USUÁRIO — use-a para
-resolver "hoje", "ontem", "semana passada" e qualquer período relativo.
+Hoje é **${ctx.diaDaSemana}, ${ctx.hoje}**, e para ele são **${ctx.agora}** agora.
+Este é o relógio DO USUÁRIO — use-o para resolver "hoje", "ontem", "semana
+passada", "de manhã" e qualquer período relativo.
 Responda no idioma: **${ctx.idioma === 'en' ? 'inglês' : 'português do Brasil'}**.
 `.trim()
 

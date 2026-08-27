@@ -5,7 +5,7 @@ import { Mic, Pause, SendHorizonal, Square, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { Textarea } from '@/shared/components/ui/textarea'
 import { OndaDeVoz } from './OndaDeVoz'
-import { MAX_SEGUNDOS, useGravador } from './useGravador'
+import { MAX_SEGUNDOS, useGravador, type ErroDeGravacao } from './useGravador'
 
 export function Compositor({
   onEnviarTexto,
@@ -15,7 +15,7 @@ export function Compositor({
 }: {
   onEnviarTexto: (texto: string) => void
   onEnviarAudio: (audio: Blob) => void
-  onErroDeGravacao: (erro: 'permission_denied' | 'unsupported') => void
+  onErroDeGravacao: (erro: ErroDeGravacao) => void
   ocupado: boolean
 }) {
   const { t } = useTranslation()
