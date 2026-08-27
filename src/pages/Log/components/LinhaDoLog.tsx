@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Ban, ChevronDown, EyeOff, Mic, Sparkles, UserRound, Wrench } from 'lucide-react'
+import { Ban, ChevronDown, EyeOff, Mic, Sparkles, Wrench } from 'lucide-react'
 
+import { PerfilAvatar } from '@/shared/components/PerfilAvatar'
 import { Badge } from '@/shared/components/ui/badge'
 import { Button } from '@/shared/components/ui/button'
 import {
@@ -9,7 +10,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/shared/components/ui/collapsible'
+import { useAuth } from '@/shared/context/AuthContext'
 import { rotuloDoDia } from '@/shared/data/extrato'
+import { urlDoAvatar } from '@/shared/lib/avatar'
 import { cn } from '@/shared/lib/utils'
 import type { MensagemDaIA } from '@/shared/data/model'
 import { formatNumber } from '@/shared/i18n/format'
@@ -44,6 +47,7 @@ import { custoDeIA } from './custo'
  */
 export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
   const { t, i18n } = useTranslation()
+  const { perfil } = useAuth()
   const [aberta, setAberta] = useState(false)
 
   const doUsuario = mensagem.papel === 'USER'
@@ -67,27 +71,41 @@ export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
       )}
     >
       <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
-        {/* Quem falou, em ícone: numa lista longa, dois símbolos alternando são
-            mais rápidos de varrer do que duas palavras. */}
-        <span
-          aria-hidden
-          className={cn(
-            'mt-0.5 grid size-6 shrink-0 place-items-center rounded-full',
-            doUsuario
-              ? 'bg-secondary text-secondary-foreground'
-              : recusa
+        {/* Quem falou, em símbolo: numa lista longa, dois símbolos alternando são
+            mais rápidos de varrer do que duas palavras.
+
+            Do lado do usuário é a FOTO DELE, a mesma do menu da conta e das
+            bolhas do Chat — não um boneco genérico. A tela existe para reler o
+            que aconteceu numa conversa, e a conversa tem duas caras; um ícone
+            igual para todo mundo tiraria justamente a metade que dá o tom de
+            quem estava falando. Sem foto, o `PerfilAvatar` cai nas iniciais, que
+            ainda dizem mais do que o boneco. */}
+        {doUsuario ? (
+          // `aria-hidden` como no resto da linha: quem falou já está dito pelo
+          // rótulo `sr-only` logo abaixo, e sem isto o leitor de tela anunciaria
+          // as iniciais do fallback antes dele — o mesmo dado, duas vezes.
+          <span aria-hidden className="mt-0.5 shrink-0">
+            <PerfilAvatar
+              url={perfil ? urlDoAvatar(perfil) : null}
+              nome={perfil?.nome ?? ''}
+              className="size-6"
+              classNameFallback="text-[0.625rem]"
+              tamanhoDoIcone="size-3"
+            />
+          </span>
+        ) : (
+          <span
+            aria-hidden
+            className={cn(
+              'mt-0.5 grid size-6 shrink-0 place-items-center rounded-full',
+              recusa
                 ? 'bg-destructive-muted text-destructive'
                 : 'bg-primary-muted text-primary-muted-foreground',
-          )}
-        >
-          {doUsuario ? (
-            <UserRound className="size-3.5" />
-          ) : recusa ? (
-            <Ban className="size-3.5" />
-          ) : (
-            <Sparkles className="size-3.5" />
-          )}
-        </span>
+            )}
+          >
+            {recusa ? <Ban className="size-3.5" /> : <Sparkles className="size-3.5" />}
+          </span>
+        )}
 
         <div className="min-w-0 flex-1">
           <p className="whitespace-pre-wrap break-words text-sm text-foreground">
