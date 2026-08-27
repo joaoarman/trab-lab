@@ -1,24 +1,3 @@
-// =============================================================================
-// As ferramentas de RECEITAS — o espelho de Gastos, com uma ausência de propósito.
-//
-// ## Não há categoria aqui, e não é simplificação
-//
-// É o que a natureza do dado pede. Gasto se pergunta "em quê?", e a resposta é
-// uma árvore inteira (`Carro › Gasolina`), porque um mês tem dezenas de gastos
-// espalhados. Receita se pergunta "de onde?", e a resposta cabe no `nome`:
-// salário, freela, aluguel. São três ou quatro linhas por mês, e classificar três
-// linhas numa hierarquia é fricção sem retorno.
-//
-// A consequência prática para a IA: **o nome é o único descritor**, então ele
-// carrega sozinho o que a hierarquia carrega no gasto. "Freela" é um nome ruim se
-// a pessoa tem três clientes; "freela do site da padaria" é o que ela vai
-// reconhecer em dezembro.
-//
-// Quatro ferramentas em vez das cinco de Gastos: não existe `resumo_de_receitas`,
-// porque o resumo de gastos é por categoria — e é justamente a categoria que não
-// existe aqui. "Quanto recebi no mês" é `consultar_receitas`, que já devolve o
-// total do recorte.
-// =============================================================================
 import {
   type Ferramenta,
   dinheiro,
@@ -32,19 +11,11 @@ import {
 } from './comum.ts'
 import { resolverCotacao } from './cotacao.ts'
 
-/**
- * As colunas lidas da `income`.
- *
- * `created_at` entra, e é a diferença para Gastos: em receita, "registrada em" é
- * dado exibido — a tela mostra as duas datas lado a lado, e a diferença entre
- * elas ("recebi na sexta, lancei na segunda") fica auditável a olho nu.
- */
 const COLUNAS = 'id, name, amount, currency, exchange_rate, amount_brl, received_at, created_at'
 
 interface LinhaDeReceita {
   id: number
   name: string
-  // `numeric` chega do PostgREST como TEXTO ('500.00'). Conversão na fronteira.
   amount: string | number
   currency: 'BRL' | 'USD'
   exchange_rate: string | number | null
@@ -64,10 +35,6 @@ function paraModelo(linha: LinhaDeReceita) {
     recebida_em: linha.received_at,
   }
 }
-
-// -----------------------------------------------------------------------------
-// registrar_receita
-// -----------------------------------------------------------------------------
 
 const registrar_receita: Ferramenta = {
   escreve: true,
@@ -164,10 +131,6 @@ const registrar_receita: Ferramenta = {
   },
 }
 
-// -----------------------------------------------------------------------------
-// editar_receita
-// -----------------------------------------------------------------------------
-
 const editar_receita: Ferramenta = {
   escreve: true,
   schema: {
@@ -198,9 +161,6 @@ const editar_receita: Ferramenta = {
     const id = inteiro(args.id)
     if (id === null || id <= 0) throw new Error('Informe o id da receita a editar.')
 
-    // Lida antes, pelo mesmo motivo de Gastos: se a receita está em USD e só o
-    // valor muda, a cotação a manter é a que já está gravada. Buscar a de hoje
-    // reescreveria o passado — o freela de março valeu o dólar de março.
     const { data: atualBruto, error: erroAoLer } = await ctx.cliente
       .from('income')
       .select(COLUNAS)
@@ -270,10 +230,6 @@ const editar_receita: Ferramenta = {
   },
 }
 
-// -----------------------------------------------------------------------------
-// excluir_receita
-// -----------------------------------------------------------------------------
-
 const excluir_receita: Ferramenta = {
   escreve: true,
   schema: {
@@ -338,10 +294,6 @@ const excluir_receita: Ferramenta = {
   },
 }
 
-// -----------------------------------------------------------------------------
-// consultar_receitas
-// -----------------------------------------------------------------------------
-
 const LIMITE_PADRAO = 20
 const LIMITE_MAXIMO = 50
 
@@ -380,7 +332,6 @@ const consultar_receitas: Ferramenta = {
   },
 
   async executar(ctx, args) {
-    // Sem data nenhuma = todo o histórico. Ver o comentário em `consultar_gastos`.
     const periodo = periodoOpcional(args.de, args.ate, ctx.fusoEmMinutos)
     if (!periodo) throw new Error('Período inválido. Use AAAA-MM-DD nas datas.')
 
@@ -398,8 +349,6 @@ const consultar_receitas: Ferramenta = {
 
     if (busca) consulta = consulta.ilike('name', `%${busca}%`)
 
-    // A lista e o total em paralelo — o total sai do Postgres, sobre o recorte
-    // inteiro. Somar a lista limitada daria um número menor que a verdade.
     const [lista, relatorio] = await Promise.all([
       consulta,
       ctx.cliente.rpc('income_report', {

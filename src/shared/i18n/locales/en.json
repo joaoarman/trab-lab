@@ -9,6 +9,8 @@
     "closeMenu": "Close menu",
     "chat": "Chat",
     "chatSubtitle": "Track and query your finances by chatting",
+    "statement": "Statement",
+    "statementSubtitle": "Expenses and income in one list, in order",
     "expenses": "Expenses",
     "expensesSubtitle": "Everything that went out, by category and period",
     "income": "Income",
@@ -128,7 +130,7 @@
     },
     "welcome": {
       "title": "Just say it, I'll write it down",
-      "description": "Track and check your expenses and income by chatting — typing or speaking. I pick the category and show you exactly what I saved.",
+      "description": "Track and check your expenses and income by chatting, typing or speaking. I pick the category and show you exactly what I saved.",
       "examples": {
         "expense": "Spent 20 at the gas station",
         "dollar": "Paid 12 dollars for yesterday's subscription",
@@ -140,7 +142,7 @@
     "clear": {
       "action": "Clear chat",
       "title": "Clear the conversation?",
-      "description": "The messages disappear from this screen, but your expenses, income and categories stay exactly as they are — clearing the chat undoes nothing it recorded. The history and the cost stay in the AI Log.",
+      "description": "The messages disappear from this screen, but your expenses, income and categories stay exactly as they are: clearing the chat undoes nothing it recorded. The history and the cost stay in the AI Log.",
       "confirm": "Clear",
       "done": "Conversation cleared."
     },
@@ -180,6 +182,33 @@
       "unknown": "Something went wrong. Try again."
     }
   },
+  "statement": {
+    "page": {
+      "count_one": "{{count}} entry in this period",
+      "count_other": "{{count}} entries in this period",
+      "in": "In",
+      "out": "Out",
+      "balance": "Balance",
+      "loadFailed": "Could not load your statement.",
+      "categoriesFailed": "Could not load your categories. Expenses show up without their names.",
+      "retry": "Try again"
+    },
+    "filters": {
+      "type": "Show",
+      "all": "Everything",
+      "onlyIncome": "Income only",
+      "onlyExpenses": "Expenses only"
+    },
+    "list": {
+      "income": "Income",
+      "noCategory": "No category"
+    },
+    "empty": {
+      "title": "Nothing in this statement",
+      "description": "No expenses or income in this period. Change the range above to look at another date, or record it in the chat: just write \"spent 20 at the gas station\".",
+      "action": "Record it in the chat"
+    }
+  },
   "expenses": {
     "page": {
       "count_one": "{{count}} expense in this period",
@@ -191,7 +220,7 @@
     },
     "empty": {
       "title": "No expenses here",
-      "description": "Nothing was recorded in this period with this filter. Change the range above to look at another date — or log an expense now. In the chat, just write \"spent 20 on fuel\".",
+      "description": "Nothing was recorded in this period with this filter. Change the range above to look at another date, or log an expense now. In the chat, just write \"spent 20 on fuel\".",
       "action": "Log an expense"
     },
     "filters": {
@@ -238,7 +267,7 @@
     },
     "empty": {
       "title": "No income here",
-      "description": "Nothing was recorded in this period. Change the range above to look at another date — or log an income entry now. In the chat, just write \"got 3000 from my salary\".",
+      "description": "Nothing was recorded in this period. Change the range above to look at another date, or log an income entry now. In the chat, just write \"got 3000 from my salary\".",
       "action": "Log an income entry"
     },
     "list": {
@@ -282,7 +311,7 @@
     },
     "empty": {
       "title": "No categories yet",
-      "description": "Categories organise your expenses and income into a hierarchy — Car › Fuel, Home › Groceries › Market. Create the first one here, or let the chat create it for you when you log an expense.",
+      "description": "Categories organise your expenses and income into a hierarchy: Car › Fuel, Home › Groceries › Market. Create the first one here, or let the chat create it for you when you log an expense.",
       "action": "Create the first one",
       "allInactive": "All of your categories are deactivated. Bring one back below, or create a new one."
     },
@@ -316,7 +345,7 @@
       "title": "Delete {{name}}?",
       "checking": "Checking what is linked to it…",
       "willDelete": "Nothing is linked to it: it will be deleted for good.",
-      "willDeleteHint": "Had it any subcategories or entries, it would only be deactivated — and you could bring it back.",
+      "willDeleteHint": "Had it any subcategories or entries, it would only be deactivated, and you could bring it back.",
       "willDeactivate": "It will not be deleted: it will be deactivated.",
       "becauseChildren_one": "{{count}} subcategory goes with it",
       "becauseChildren_other": "{{count}} subcategories go with it",
@@ -451,5 +480,418 @@
     "refreshRate": "Fetch the current rate",
     "rateFailed": "We couldn't fetch the exchange rate. Type it in by hand to carry on.",
     "preview": "Comes to {{value}}"
+  },
+  "slides": {
+    "page": {
+      "title": "Slides",
+      "subtitle": "The course presentation, running inside the system itself"
+    },
+    "ui": {
+      "previous": "Previous",
+      "next": "Next",
+      "fullscreen": "Full screen",
+      "exitFullscreen": "Exit full screen",
+      "counter": "{{atual}} / {{total}}",
+      "index": "Go to slide",
+      "open": "Open",
+      "hint": "← → to navigate · F for full screen",
+      "deckLabel": "Course presentation"
+    },
+    "capa": {
+      "eyebrow": "Software Development Lab",
+      "title": "Self OS",
+      "tagline": "A personal organization ecosystem you use by talking to it",
+      "author": "João Arman",
+      "course": "Systems Analysis and Development · IFRS Canoas Campus",
+      "domain": "selfos.com.br"
+    },
+    "problema": {
+      "eyebrow": "Motivation",
+      "title": "Tracking and organizing information is a typing job",
+      "itens": [
+        "Open the app, find the screen, fill in every field of whatever you want to record, and save.",
+        "Friction enough to make people quit after a week.",
+        "Incomplete information means nothing (finances, meals, calories): you cannot decide anything with it.",
+        "It is not the lack of an app, there are plenty on the market. What weighs is the cost of recording all of it."
+      ],
+      "kicker": "Here, recording costs one sentence."
+    },
+    "solucao": {
+      "eyebrow": "Overview",
+      "title": "What Self OS is",
+      "lead": "A personal organization assistant: you record and check your own information by talking, in text or by voice. Finance is the first module.",
+      "cards": [
+        {
+          "title": "Log",
+          "body": "“I just spent R$ 20 at the gas station” → the AI files the expense under Car › Fuel, creating the category if it does not exist, and answers with a confirmation card."
+        },
+        {
+          "title": "Ask",
+          "body": "“how much did I spend on fuel this month?” sums the subcategory. “how much on the car?” sums Car and every descendant in the tree."
+        },
+        {
+          "title": "Fix or delete",
+          "body": "“it was actually 30” and the AI adjusts it right away. To delete, it shows the record and asks first: deleting is the one thing that never happens without your confirmation."
+        }
+      ],
+      "footer": "The Expenses, Income and Categories screens exist to review and adjust what the conversation produces. They are not the mandatory way in."
+    },
+    "fluxo": {
+      "eyebrow": "The core of the product",
+      "title": "What happens when you send a sentence",
+      "passos": [
+        {
+          "title": "You speak",
+          "body": "“I just spent R$ 200 on fuel”, by text or by voice, from wherever you are."
+        },
+        {
+          "title": "The AI understands",
+          "body": "It pulls the amount, where the money went, when it happened and which category it belongs to."
+        },
+        {
+          "title": "The system records",
+          "body": "The expense lands in your statement. If the right category does not exist yet, it is created on the spot."
+        },
+        {
+          "title": "A card comes back",
+          "body": "The confirmation shows the amount, where it went, the full category path, the date and the time."
+        },
+        {
+          "title": "Wrong? One sentence fixes it",
+          "body": "“it was actually 180” and done. To delete, the AI shows the record and asks first."
+        }
+      ]
+    },
+    "fluxoTecnico": {
+      "eyebrow": "Under the hood",
+      "title": "What happens when you send a sentence (technical side)",
+      "passos": {
+        "mensagem": {
+          "title": "The message",
+          "body": "Text or voice. Audio goes through an Edge Function first and reaches the chat already as text."
+        },
+        "pedido": {
+          "title": "The API request",
+          "body": "The system assembles the base prompt, the context of the day and the user's category tree, attaches the 13 tools and the conversation history, and sends it all along with the sentence. Click the underlined parts to see what goes into each one."
+        },
+        "escolha": {
+          "title": "The model's choice",
+          "body": "The answer does not come as text: it comes as the tool the model wants to call, with the arguments it pulled from the sentence."
+        },
+        "ferramenta": {
+          "title": "The tool runs",
+          "body": "The function is fixed: the table and the columns are always the same, written by us in ferramentas/gastos.ts. The AI fills in the values only, and each one goes through a validation before reaching the database. It never writes SQL and never picks where to store anything."
+        }
+      },
+      "verDetalhe": "Click to see the real text",
+      "detalhes": {
+        "basePrompt": {
+          "rotulo": "base prompt",
+          "titulo": "The base prompt",
+          "descricao": "The long prompt, the same one the Edge Function sends with every message: who the AI is, what it does, how it picks a category, how it handles dates and what it must never do. {{linhas}} lines, taken straight from the system file."
+        },
+        "contexto": {
+          "rotulo": "today's context",
+          "titulo": "The context of this conversation",
+          "descricao": "The block that changes with every message. The date is the USER's, not the server's: it is what makes \"yesterday\" and \"last Friday\" land on the right day for whoever is talking."
+        },
+        "arvore": {
+          "rotulo": "category tree",
+          "titulo": "The category tree",
+          "descricao": "The whole user hierarchy goes into the prompt, with ids, so the AI can pick the right drawer on the first try without a round trip to the database. Deactivated ones go too, marked. Shown here with a sample tree; the format is the real one."
+        }
+      }
+    },
+    "personas": {
+      "eyebrow": "Who it is for",
+      "title": "Personas",
+      "pessoas": [
+        {
+          "nome": "João, 24",
+          "papel": "Student and software engineer",
+          "cita": "“I never know how much I spend on subscriptions.”",
+          "dor": "His income comes from projects, and every project pulls in a subscription: Supabase, Firebase, Resend, a VPS or shared hosting, a domain, Claude, GPT, Cursor and API credits. Many small charges, several in dollars, scattered across the month.",
+          "precisa": "To log each subscription in seconds and ask what a project cost this month, without opening a single invoice."
+        },
+        {
+          "nome": "Giulia, 34",
+          "papel": "Runs everything on a spreadsheet",
+          "cita": "“My spreadsheet only works on the computer.”",
+          "dor": "She has tracked income and expenses for years, but opening the spreadsheet on her phone is painful and impractical. And to answer one specific question she has to go dig it out of a report.",
+          "precisa": "To log from her phone with one sentence and ask whatever she wants, without building a report for every question."
+        },
+        {
+          "nome": "Carlos, 63",
+          "papel": "Works on his own cars",
+          "cita": "“I have no idea what the cars cost me.”",
+          "dor": "He owns more than one car, and one of them is old. Fuel (one of them drinks a lot), vehicle tax, maintenance, parts and the modifications he makes himself all land in the same pile.",
+          "precisa": "One category per car, with fuel, tax and maintenance underneath, and the total for each whenever he asks."
+        }
+      ]
+    },
+    "historias": {
+      "eyebrow": "User stories",
+      "title": "As a user, I want to…",
+      "itens": [
+        {
+          "quero": "log an expense by sending a sentence",
+          "para": "so I never have to open a form"
+        },
+        {
+          "quero": "dictate by voice",
+          "para": "so I can log without stopping what I am doing"
+        },
+        {
+          "quero": "have the category chosen (and created) for me",
+          "para": "so I do not have to organize anything before starting"
+        },
+        {
+          "quero": "ask “how much did I spend on the car this month?”",
+          "para": "so I see the category total and everything below it"
+        },
+        {
+          "quero": "fix and delete through the conversation",
+          "para": "so I do not have to hunt the entry down in a list"
+        },
+        {
+          "quero": "see the statement by period, day by day",
+          "para": "so I can review the month calmly on the computer"
+        },
+        {
+          "quero": "shape the category tree myself",
+          "para": "so the system talks about my money my way"
+        },
+        {
+          "quero": "log in dollars with the rate of the day",
+          "para": "so a purchase from abroad lands correctly in the statement"
+        },
+        {
+          "quero": "see what the AI did and what it cost",
+          "para": "so I can trust what was recorded in my name"
+        }
+      ]
+    },
+    "requisitos": {
+      "eyebrow": "Functional requirements",
+      "titleEssenciais": "What the system must do",
+      "titleDemais": "Should-haves and could-haves",
+      "nota": "MoSCoW prioritization: essential (must), important (should), nice to have (could).",
+      "prioridade": {
+        "ESSENCIAL": "Essential",
+        "IMPORTANTE": "Important",
+        "DESEJAVEL": "Nice to have"
+      },
+      "status": {
+        "PRONTO": "Done",
+        "FUTURO": "Future"
+      },
+      "colunas": {
+        "id": "#",
+        "requisito": "Requirement",
+        "prioridade": "Priority",
+        "status": "Status"
+      },
+      "itens": {
+        "RF01": "Create an account and sign in with e-mail and password",
+        "RF02": "Log an expense by talking, in text",
+        "RF03": "Log by voice (speech becomes text)",
+        "RF04": "Categorize the expense automatically, creating the category when it does not exist",
+        "RF05": "Log income by talking",
+        "RF06": "Ask for totals by category and period, summing the whole subtree",
+        "RF07": "Edit and delete expenses and income through the conversation",
+        "RF08": "See the expense and income statement, grouped by day, with a period filter",
+        "RF09": "Manage the category tree: create, rename, move, deactivate and delete",
+        "RF10": "Refuse what is outside the system instead of making an answer up",
+        "RF11": "Log in another currency, storing the rate at that moment",
+        "RF12": "Audit the AI: tools, tokens and cost of every message",
+        "RF13": "Clear the conversation without losing the audit trail",
+        "RF14": "Edit profile, photo and password; choose theme and language",
+        "RF15": "Confirm e-mail and recover a forgotten password",
+        "RF16": "Sign in with Google and delete your own account from the app",
+        "RF17": "Pull bank transactions through Open Finance",
+        "RF18": "Open the next modules: Family, Calendar, Workouts, Meals and Tasks",
+        "RF19": "Use your own AI key and pick the model, for a lower subscription in return"
+      }
+    },
+    "casosDeUso": {
+      "eyebrow": "Analysis",
+      "title": "Use case diagram",
+      "sistema": "Self OS",
+      "atores": {
+        "usuario": "User",
+        "ia": "AI (OpenAI)",
+        "cotacao": "FX rate (AwesomeAPI)"
+      },
+      "casos": {
+        "entrar": "Sign in / sign up",
+        "conversar": "Talk to the assistant",
+        "ditar": "Dictate by voice",
+        "registrarGasto": "Log expense",
+        "registrarReceita": "Log income",
+        "consultar": "Ask for totals",
+        "editar": "Edit entry",
+        "excluir": "Delete entry",
+        "criarCategoria": "Create category",
+        "recusar": "Refuse out-of-scope topic",
+        "extrato": "See statement by period",
+        "categorias": "Manage categories",
+        "auditar": "Audit AI usage",
+        "conta": "Manage account"
+      },
+      "legenda": "«include» always happens · «extend» happens in certain cases"
+    },
+    "banco": {
+      "eyebrow": "Design",
+      "title": "ER diagram of the database"
+    },
+    "arquitetura": {
+      "eyebrow": "Build",
+      "title": "Stack and architecture",
+      "blocos": [
+        {
+          "title": "Front-end",
+          "body": "React + Vite + TypeScript, Tailwind and the project's own UI (shadcn/ui)."
+        },
+        {
+          "title": "Back-end",
+          "body": "Supabase: database, auth and storage. No server of our own to maintain. The plan is to move to NestJS later on; the MVP starts on Supabase because it gets up and running far faster."
+        },
+        {
+          "title": "The AI",
+          "body": "Two Edge Functions: the conversation loop (13 tools) and audio transcription."
+        },
+        {
+          "title": "Security",
+          "body": "Owner RLS on every table: each one has a profile_id column tied to the signed-in user, and the database only returns their rows."
+        }
+      ]
+    },
+    "telas": {
+      "eyebrow": "Prototype and implementation",
+      "title": "The screens, already built",
+      "lead": "There is no mockup in a drawing tool: the screens are up, and this presentation is running inside the system itself.",
+      "extras": {
+        "auth": "Sign in and sign up",
+        "authSubtitle": "Outside the shell; signed out reaches nothing",
+        "account": "My account",
+        "accountSubtitle": "Profile, photo, password, theme and language"
+      }
+    },
+    "validacao": {
+      "eyebrow": "Validation",
+      "title": "How the screens are validated",
+      "etapas": {
+        "heuristicas": {
+          "title": "Nielsen's heuristics",
+          "body": "Walk the ten Nielsen heuristics screen by screen and write down what each one flags: visibility of state, error prevention, easy exit and consistency across modules."
+        },
+        "responsividade": {
+          "title": "Real responsiveness",
+          "body": "Every screen checked on phone and desktop: the chat by phone, the lists and the log on a monitor."
+        },
+        "teste": {
+          "title": "Task-based usability test",
+          "body": "5 users, 4 tasks: log an expense by text, dictate one by voice, find out how much was spent on a topic this month, and fix a wrong entry."
+        },
+        "metricas": {
+          "title": "Metrics",
+          "body": "Unassisted completion rate, time per task and number of errors, plus SUS (System Usability Scale), targeting 68 points."
+        },
+        "reteste": {
+          "title": "Fix and retest",
+          "body": "Fix whatever blocked more than one user and repeat only the affected tasks."
+        }
+      },
+      "estados": {
+        "FEITO": "Done",
+        "PLANEJADO": "Next delivery"
+      }
+    },
+    "concorrentes": {
+      "eyebrow": "Market",
+      "title": "Similar products",
+      "itens": [
+        {
+          "nome": "Meu Assessor",
+          "onde": "WhatsApp · subscription",
+          "faz": "A team of AI assistants: finances, calendar, tasks and documents, with Open Finance and family sharing.",
+          "falta": "It lives inside WhatsApp and never shows what the AI did or what it cost."
+        },
+        {
+          "nome": "Magie",
+          "onde": "WhatsApp · payment account",
+          "faz": "A financial assistant that actually moves money: Pix by voice or photo, bills, and a balance that earns interest.",
+          "falta": "It is conversational banking, not expense tracking: it does not organize categories or close the month."
+        },
+        {
+          "nome": "Mobills · Organizze",
+          "onde": "Own app · freemium",
+          "faz": "The classic personal finance apps: categories, goals, charts and card syncing.",
+          "falta": "Every entry is a form, exactly the friction that makes people stop using it."
+        }
+      ]
+    },
+    "comparacao": {
+      "eyebrow": "Market",
+      "title": "Where Self OS fits",
+      "produtos": {
+        "selfos": "Self OS",
+        "meuAssessor": "Meu Assessor",
+        "magie": "Magie",
+        "mobills": "Mobills / Organizze"
+      },
+      "criterios": {
+        "conversa": "Logging by conversation (text and voice)",
+        "appProprio": "Its own app, no WhatsApp required",
+        "arvore": "Category tree shaped by the user",
+        "auditoria": "Shows what the AI did, the tokens and the cost",
+        "openFinance": "Pulls bank transactions (Open Finance)",
+        "pagamentos": "Pays and transfers (Pix)",
+        "alemFinanceiro": "Goes beyond finance (calendar, workouts, family…)",
+        "chavePropria": "Lets the user bring their own AI key and pick the model"
+      },
+      "valores": {
+        "SIM": "has it",
+        "PARCIAL": "partial or planned",
+        "NAO": "does not have it"
+      }
+    },
+    "documentacao": {
+      "eyebrow": "Organization",
+      "title": "The documentation on GitHub",
+      "itens": [
+        {
+          "path": "README.md",
+          "body": "The project context: the problem, chat as the core, the screens, the stack, the security model and how to run it."
+        },
+        {
+          "path": "docs/produtos-similares/",
+          "body": "The analysis of related systems, with the comparison charts."
+        },
+        {
+          "path": "supabase/migrations/",
+          "body": "One dated migration per delivery; supabase/schema/ holds the final state of the database, by subject."
+        },
+        {
+          "path": "commits/",
+          "body": "One folder per delivery, with the SQL that was run and a summary of what changed."
+        },
+        {
+          "path": "PENDENCIAS.md",
+          "body": "What was deliberately left out, with step-by-step instructions to switch each item on."
+        }
+      ]
+    },
+    "futuro": {
+      "eyebrow": "Vision",
+      "title": "Finance is the first module, not the product",
+      "lead": "Self OS is an operating system for personal life. The next modules already show up at the foot of the sidebar, marked as a future idea.",
+      "kicker": "No competitor found ties finance to workouts and meals. The closest ones stop at calendar and tasks."
+    },
+    "fim": {
+      "title": "Thank you",
+      "lead": "Questions?",
+      "demo": "The demo is the system itself: this presentation is one of its routes, at /slides."
+    }
   }
 }

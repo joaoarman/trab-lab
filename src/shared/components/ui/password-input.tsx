@@ -5,22 +5,6 @@ import { ArrowBigUp, Eye, EyeOff } from 'lucide-react'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/utils'
 
-/**
- * PasswordInput — o `Input` do projeto com as duas coisas que todo campo de
- * senha precisa ter.
- *
- * **Ver/ocultar.** Digitar uma senha às cegas num teclado de celular é onde os
- * erros de digitação nascem, e neste projeto um erro de digitação custa caro:
- * não há recuperação de senha (ver `PENDENCIAS.md`), então uma senha
- * cadastrada errada tranca a conta para sempre.
- *
- * **Aviso de Caps Lock.** É a causa nº 1 de "minha senha está certa e não
- * entra", e o navegador não avisa. Aparece só enquanto o campo está em foco COM
- * a tecla ligada — um aviso permanente vira ruído.
- *
- * Como é um primitivo (o campo de senha é o mesmo no login, no cadastro e na
- * troca de senha), mora em `ui/` e não na pasta de um módulo.
- */
 export const PasswordInput = React.forwardRef<
   HTMLInputElement,
   Omit<React.ComponentProps<'input'>, 'type'>
@@ -29,8 +13,6 @@ export const PasswordInput = React.forwardRef<
   const [visivel, setVisivel] = React.useState(false)
   const [capsLock, setCapsLock] = React.useState(false)
 
-  // `getModifierState` responde pelo estado da tecla no momento do evento — é o
-  // único jeito de saber, já que não existe evento de "Caps Lock mudou".
   const verificarCapsLock = (evento: React.KeyboardEvent<HTMLInputElement>) => {
     setCapsLock(evento.getModifierState('CapsLock'))
   }
@@ -41,7 +23,6 @@ export const PasswordInput = React.forwardRef<
         <Input
           ref={ref}
           type={visivel ? 'text' : 'password'}
-          // O espaço à direita é do botão do olho; sem ele o texto passa por baixo.
           className={cn('pr-10', className)}
           onKeyDown={(evento) => {
             verificarCapsLock(evento)
@@ -59,9 +40,6 @@ export const PasswordInput = React.forwardRef<
         />
         <button
           type="button"
-          // `tabIndex={-1}` de propósito: quem navega pelo teclado quer sair do
-          // campo de senha direto para o botão de entrar, não parar num controle
-          // de visualização no meio do caminho.
           tabIndex={-1}
           onClick={() => setVisivel((atual) => !atual)}
           aria-label={visivel ? t('auth.password.hide') : t('auth.password.show')}

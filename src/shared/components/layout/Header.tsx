@@ -6,17 +6,6 @@ import { Brand } from './Brand'
 import { UserMenu } from './UserMenu'
 import { findActiveItem } from './navigation'
 
-/**
- * A barra do topo: onde o usuário está, e o acesso à navegação no celular.
- *
- * O título sai do MESMO `labelKey` que a sidebar usa no link — o nome do módulo
- * é escrito num lugar só (`navigation.ts`), e não há como o menu dizer "Gastos"
- * e o cabeçalho dizer outra coisa.
- *
- * A linha de apoio some abaixo de `sm`: no celular o que importa é o título e o
- * conteúdo: uma segunda linha explicando o módulo custaria altura da tela toda
- * vez, para uma informação que só se lê na primeira visita.
- */
 export function Header({ onAbrirMenu }: { onAbrirMenu: () => void }) {
   const { t } = useTranslation()
   const { pathname } = useLocation()
@@ -35,8 +24,6 @@ export function Header({ onAbrirMenu }: { onAbrirMenu: () => void }) {
           <Menu className="size-5" aria-hidden />
         </Button>
 
-        {/* No desktop a marca já está no topo da sidebar; repeti-la aqui seria
-            dizer o nome do produto duas vezes na mesma linha do olho. */}
         <Brand compact className="lg:hidden" />
 
         <div className="min-w-0 flex-1">
@@ -50,7 +37,6 @@ export function Header({ onAbrirMenu }: { onAbrirMenu: () => void }) {
           )}
         </div>
 
-        {/* No desktop o menu do usuário vive no rodapé da sidebar. */}
         <div className="lg:hidden">
           <UserMenu variant="compact" />
         </div>

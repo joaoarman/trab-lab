@@ -3,14 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { CircleDollarSign } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 
-/**
- * A marca do sistema. `compact` mostra só o símbolo — é o que cabe no header do
- * celular, onde o nome já aparece na gaveta.
- *
- * O nome e a tagline vêm do i18n (`brand.name` / `brand.tagline`), não de uma
- * constante: é o único jeito de o produto se chamar a mesma coisa nas duas
- * línguas sem uma segunda cópia do texto.
- */
 export function Brand({ compact = false, className }: { compact?: boolean; className?: string }) {
   const { t } = useTranslation()
 

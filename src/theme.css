@@ -1,62 +1,12 @@
-/* =============================================================================
-   TEMA DO PROJETO — fonte ÚNICA da identidade visual.
+/* TEMA DO PROJETO — a fonte única da identidade visual: cores (claro + escuro),
+   tipografia, raio e enquadramento do conteúdo. O tailwind.config.ts apenas MAPEIA
+   estas variáveis para utilitários; nenhum valor mora lá.
 
-   Tudo que define a "cara" do sistema vive AQUI e só aqui, como CSS variables:
-   cores (claro + escuro), tipografia, raio de borda e o enquadramento do
-   conteúdo (largura máxima e padding). Para migrar a paleta, as fontes ou a
-   densidade do app inteiro, edite este arquivo — nada de valor hardcoded em
-   componente ou no tailwind.config.ts (lá só se MAPEIA a variável para um
-   utilitário; o valor mora aqui).
+   --income e --expense são um par semântico próprio, separado de --primary (a
+   marca, o que é clicável) e de --destructive (perigo): um gasto de R$ 20 no posto
+   é o dia normal de quem controla dinheiro, não um erro a repreender. */
 
-   Como funciona:
-   • Cores: valores HSL crus ("H S% L%") consumidos como hsl(var(--token)) —
-     o mapeamento para utilitários (bg-primary, text-muted-foreground…) está
-     no tailwind.config.ts.
-   • Tipografia: as variáveis --font-* definem as famílias; os utilitários são
-     font-sans (corpo/UI), font-display (títulos/marca) e font-mono (números/dados).
-   • Enquadramento do conteúdo: --content-max-width e --content-padding definem
-     a largura máxima e o respiro da área de conteúdo. O layout aplica via
-     max-w-content / px-content. Trocou aqui, o app inteiro se ajusta.
-     --bottom-nav-height completa o enquadramento por baixo, no mobile: é a
-     altura da barra de navegação inferior, lida por ela E pelo espaço que o
-     <main> reserva embaixo — os dois precisam concordar, então é um token só.
-   • Tema claro em :root; tema escuro em .dark (classe no <html>, via toggle).
-
-   -----------------------------------------------------------------------------
-   IDENTIDADE — "SALDO" (esmeralda sobre neutros quentes)
-
-   O verde é a cor do dinheiro que sobra, e aqui ele é a marca: navegação ativa,
-   ação principal, confirmação de registro salvo no chat. Os neutros são quentes
-   (areia no claro, grafite quente no escuro) para o chat não parecer um painel
-   frio — a conversa é o coração do sistema.
-
-     Marca      esmeralda (--primary)  → navegação ativa, ação principal, marca
-     Receita    verde-grama (--income) → entrada de dinheiro
-     Gasto      coral (--expense)      → saída de dinheiro
-     Neutros    areia quente (claro) / grafite quente (escuro)
-     Gráficos   --chart-1..5: esmeralda · céu · âmbar · violeta · rosa
-     Fontes     Outfit (display) · Inter (UI) · JetBrains Mono (valores em R$)
-     Forma      raio 14px  ·  Densidade  80rem de conteúdo, 24px de respiro
-
-   ## Por que --income e --expense existem, separados de --primary
-
-   Num sistema financeiro, "positivo" e "negativo" são um par de cores com
-   SIGNIFICADO, e ele aparece em todo lugar: no valor do gasto salvo no chat, na
-   linha do extrato, no total do mês, no gráfico por categoria. Se cada tela
-   escolher o próprio verde e o próprio vermelho, o par sai de sintonia — e é
-   exatamente o par que o usuário lê primeiro, antes do número.
-
-   Eles NÃO são --primary e --destructive:
-   • --primary é a MARCA (o que é clicável, o que está ativo). Um extrato cheio
-     de receitas não deveria parecer cheio de botões.
-   • --destructive é PERIGO (apagar, ação irreversível). Um gasto de R$ 20 no
-     posto não é um erro nem um alerta — é o dia normal de quem controla o
-     dinheiro. Pintá-lo com a cor de "excluir" faria o app repreender o usuário
-     a cada registro.
-   ========================================================================== */
-
-/* Fontes self-hosted: nada de chamada externa, e continuam funcionando offline
-   se um dia o sistema virar PWA. */
+/* Fontes self-hosted: nenhuma chamada externa. */
 @import '@fontsource-variable/outfit';
 @import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
@@ -130,8 +80,7 @@
   --income-foreground: 0 0% 100%;
   --income-muted: 142 50% 94%;
 
-  /* Dinheiro que SAI — coral. Vermelho de LEITURA, não de alerta: veja a nota
-     no cabeçalho sobre por que não é --destructive. */
+  /* Dinheiro que SAI — coral. Vermelho de leitura, não de alerta. */
   --expense: 8 72% 46%;
   --expense-foreground: 0 0% 100%;
   --expense-muted: 8 78% 96%;
@@ -139,25 +88,12 @@
   /* Estados */
   --destructive: 0 72% 45%;
   --destructive-foreground: 0 0% 100%;
-  /* O fundo suave do perigo — o par de --destructive, como --expense-muted é o
-     par de --expense. Entrou com a bolha de RECUSA do Chat ("este assunto não é
-     do sistema"), que precisa ser vermelha e legível ao mesmo tempo: sobre
-     --destructive cheio, um parágrafo inteiro em branco vira um bloco que grita.
-     A cor do TEXTO nesse fundo é --destructive, não --destructive-foreground. */
+  /* Fundo suave do perigo (bolha de recusa do Chat). O texto sobre ele é
+     --destructive, não --destructive-foreground. */
   --destructive-muted: 0 80% 96%;
 
-  /* ATENÇÃO — âmbar. O aviso de "alterações não salvas" na tela de conta, e o
-     que vier depois com o mesmo papel: "isto ainda não está gravado", "isto
-     precisa da sua atenção antes de sair da tela".
-
-     É uma quarta cor de estado porque as outras três já significam outra coisa,
-     e reaproveitar qualquer uma delas mentiria para o usuário:
-       --destructive  é PERIGO (excluir, irreversível) — um nome ainda não salvo
-                      não é um erro, é um trabalho em andamento;
-       --expense      é dinheiro que SAI — no app inteiro o coral quer dizer
-                      "gasto", e um aviso coral no formulário de perfil leria
-                      como um valor;
-       --primary      é a marca/ação — não avisa nada, convida a clicar. */
+  /* ATENÇÃO — âmbar: "isto ainda não está salvo". Quarta cor de estado porque as
+     outras três já significam perigo, dinheiro que sai e ação. */
   --warning: 38 92% 42%;
   --warning-foreground: 0 0% 100%;
   --warning-muted: 44 90% 94%;
@@ -171,8 +107,7 @@
 }
 
 .dark {
-  /* Ver a nota em :root — é isto que faz o ícone nativo de data dos filtros vir
-     claro, em vez de preto sobre o fundo escuro. */
+  /* Faz o ícone nativo de data dos filtros vir claro. */
   color-scheme: dark;
 
   /* ---- Cores — tema ESCURO (grafite quente, não azulado) ---- */
@@ -213,12 +148,10 @@
   /* Estados */
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  /* Ver a nota em :root. Escurece no tema escuro pelo mesmo motivo de
-     --expense-muted: um vermelho claro sobre grafite vira mancha. */
+  /* Escurece no tema escuro: vermelho claro sobre grafite vira mancha. */
   --destructive-muted: 0 35% 18%;
 
-  /* Atenção — ver a nota em :root. Sobe de luminosidade e o fundo suave escurece,
-     senão o aviso vira uma mancha clara demais sobre o grafite. */
+  /* Atenção */
   --warning: 41 96% 55%;
   --warning-foreground: 38 70% 10%;
   --warning-muted: 40 40% 17%;

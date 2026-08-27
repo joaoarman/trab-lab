@@ -13,20 +13,6 @@ import { AuthShell, ErroDoFormulario } from './components/AuthShell'
 import { ROTA_DE_LOGIN } from './components/RotaProtegida'
 import { cadastrar } from './supabase'
 
-/**
- * Criar conta — `/signup`.
- *
- * Como a confirmação de e-mail está desligada, a conta nasce confirmada e a
- * sessão já volta desta chamada: não há tela de "confirme seu e-mail", e a
- * `RotaPublica` leva direto ao Chat.
- *
- * ## Por que existe "repetir a senha"
- *
- * Este projeto **não tem recuperação de senha**. Um erro de digitação aqui não é
- * um contratempo — é a conta perdida, com o histórico financeiro dentro, sem
- * caminho de volta pelo aplicativo. O segundo campo é o único momento em que dá
- * para pegar isso.
- */
 export function SignupPage() {
   const { t } = useTranslation()
   const [nome, setNome] = useState('')
@@ -36,8 +22,6 @@ export function SignupPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
 
-  // Só reclama depois que a pessoa começou a digitar a segunda senha — avisar
-  // "não conferem" no primeiro caractere é ruído, não ajuda.
   const senhasDiferem = repetirSenha.length > 0 && senha !== repetirSenha
   const podeEnviar =
     nome.trim().length > 0 &&
@@ -52,8 +36,6 @@ export function SignupPage() {
     setEnviando(true)
     try {
       await cadastrar(nome, email, senha)
-      // Sem `setEnviando(false)`: a guarda de rota troca a tela em seguida, e
-      // devolver o botão ao normal aqui pareceria que nada aconteceu.
     } catch (falha) {
       setErro(t(chaveDeErroDeAuth(falha)))
       setEnviando(false)

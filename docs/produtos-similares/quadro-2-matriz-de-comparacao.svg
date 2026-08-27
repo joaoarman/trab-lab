@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="622" viewBox="0 0 1200 622" role="img" aria-label="Quadro 2 — matriz de comparação">
+<rect width="1200" height="622" fill="#FCFAF6"/>
+<text x="24" y="30" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="11" font-weight="500" fill="#0B7E5D" letter-spacing="1.6">QUADRO 2</text>
+<text x="116" y="30" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#726B66">Matriz de comparação nos oito critérios que orientaram o projeto do Self OS</text>
+<rect x="24" y="64" width="1152" height="410" rx="14" fill="#FFFFFF" stroke="#E8E3DA"/>
+<rect x="620" y="65" width="139" height="408" fill="#E8F7F1"/>
+<text x="689.5" y="108" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#0B7E5D" text-anchor="middle">Self OS</text>
+<text x="828.5" y="108" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#726B66" text-anchor="middle">Meu Assessor</text>
+<text x="967.5" y="108" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#726B66" text-anchor="middle">Magie</text>
+<text x="1106.5" y="96" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#726B66" text-anchor="middle">Mobills ·</text>
+<text x="1106.5" y="112" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600" fill="#726B66" text-anchor="middle">Organizze</text>
+<line x1="24" y1="122" x2="1176" y2="122" stroke="#E8E3DA"/>
+<text x="44" y="149.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Registrar conversando (texto e áudio)</text>
+<path d="M 680.5 144.5 l 5.58 6.3 L 698.5 137.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 819.5 144.5 l 5.58 6.3 L 837.5 137.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 958.5 144.5 l 5.58 6.3 L 976.5 137.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 1097.5 144.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<text x="1121.5" y="140.0" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="9.5" font-weight="500" fill="#CD7F05">1</text>
+<line x1="24" y1="166" x2="1176" y2="166" stroke="#E8E3DA" stroke-opacity="0.7"/>
+<text x="44" y="193.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">App próprio, sem depender do WhatsApp</text>
+<path d="M 680.5 188.5 l 5.58 6.3 L 698.5 181.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 821.3 180.8 l 14.4 14.4 M 835.7 180.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 958.5 188.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<text x="982.5" y="184.0" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="9.5" font-weight="500" fill="#CD7F05">2</text>
+<path d="M 1097.5 188.5 l 5.58 6.3 L 1115.5 181.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="24" y1="210" x2="1176" y2="210" stroke="#E8E3DA" stroke-opacity="0.7"/>
+<text x="44" y="237.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Categorias em árvore, moldadas pelo usuário</text>
+<path d="M 680.5 232.5 l 5.58 6.3 L 698.5 225.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 819.5 232.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 960.3 224.8 l 14.4 14.4 M 974.7 224.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1097.5 232.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<line x1="24" y1="254" x2="1176" y2="254" stroke="#E8E3DA" stroke-opacity="0.7"/>
+<text x="44" y="281.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Mostra o que a IA fez, os tokens e o custo</text>
+<path d="M 680.5 276.5 l 5.58 6.3 L 698.5 269.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 821.3 268.8 l 14.4 14.4 M 835.7 268.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 960.3 268.8 l 14.4 14.4 M 974.7 268.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1099.3 268.8 l 14.4 14.4 M 1113.7 268.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<line x1="24" y1="298" x2="1176" y2="298" stroke="#E8E3DA" stroke-opacity="0.7"/>
+<text x="44" y="325.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Puxa as transações do banco (Open Finance)</text>
+<path d="M 680.5 320.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 819.5 320.5 l 5.58 6.3 L 837.5 313.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 958.5 320.5 l 5.58 6.3 L 976.5 313.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 1097.5 320.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<text x="1121.5" y="316.0" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="9.5" font-weight="500" fill="#CD7F05">3</text>
+<line x1="24" y1="342" x2="1176" y2="342" stroke="#E8E3DA" stroke-opacity="0.7"/>
+<text x="44" y="369.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Paga e transfere (Pix)</text>
+<path d="M 682.3 356.8 l 14.4 14.4 M 696.7 356.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 821.3 356.8 l 14.4 14.4 M 835.7 356.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 958.5 364.5 l 5.58 6.3 L 976.5 357.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M 1099.3 356.8 l 14.4 14.4 M 1113.7 356.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<line x1="24" y1="386" x2="1176" y2="386" stroke="#E8E3DA" stroke-opacity="0.7"/>
+<text x="44" y="413.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Vai além do financeiro (agenda, treinos, família…)</text>
+<path d="M 680.5 408.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 819.5 408.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 960.3 400.8 l 14.4 14.4 M 974.7 400.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1099.3 400.8 l 14.4 14.4 M 1113.7 400.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<line x1="24" y1="430" x2="1176" y2="430" stroke="#E8E3DA" stroke-opacity="0.7"/>
+<text x="44" y="457.0" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Deixa o usuário usar a própria chave de IA e escolher o modelo</text>
+<path d="M 680.5 452.0 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 821.3 444.8 l 14.4 14.4 M 835.7 444.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 960.3 444.8 l 14.4 14.4 M 974.7 444.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 1099.3 444.8 l 14.4 14.4 M 1113.7 444.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M 24 504.5 l 5.58 6.3 L 42 497.52" fill="none" stroke="#1A8946" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="50" y="508" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#726B66">tem</text>
+<path d="M 105 504 h 18" stroke="#CD7F05" stroke-width="2.4" stroke-linecap="round"/>
+<text x="131" y="508" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#726B66">parcial ou planejado</text>
+<path d="M 306.8 496.8 l 14.4 14.4 M 321.2 496.8 l -14.4 14.4" stroke="#B9B3AD" stroke-width="2.4" stroke-linecap="round"/>
+<text x="331" y="508" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="400" fill="#726B66">não tem</text>
+<text x="24" y="538" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#726B66">1 · O assistente de IA do Mobills existe apenas no plano PRO e funciona no WhatsApp, em paralelo ao aplicativo.</text>
+<text x="24" y="558" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#726B66">2 · A Magie lançou um aplicativo próprio como complemento; o núcleo do produto continua no WhatsApp.</text>
+<text x="24" y="578" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="400" fill="#726B66">3 · A conexão bancária dos dois aplicativos fica atrás do plano pago.</text>
+</svg>

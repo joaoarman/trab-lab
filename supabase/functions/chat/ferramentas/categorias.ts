@@ -1,26 +1,3 @@
-// =============================================================================
-// As ferramentas de CATEGORIAS.
-//
-// São três, e são poucas de propósito: **a categoria quase nunca é o assunto da
-// conversa**. Ela nasce de lado, junto do gasto ("gastei 20 no posto" → cria
-// `Carro › Gasolina`), e quem a cria nesse caminho é `registrar_gasto`, não
-// `criar_categoria`. As daqui existem para os pedidos em que a árvore é o assunto:
-// "cria uma categoria de Pets", "renomeia Mercado para Supermercado", "apaga a
-// categoria Viagem".
-//
-// Não há ferramenta de LEITURA, e a ausência é o desenho: a árvore inteira já vai
-// no system prompt, com os ids (ver `montarSystemPrompt`). Uma ferramenta
-// `listar_categorias` custaria uma rodada a mais para devolver o que o modelo já
-// tem diante dos olhos.
-//
-// ## Excluir categoria é diferente de excluir gasto
-//
-// Aqui quem decide é o BANCO, não a IA. `category_remove` exclui quando não há
-// nada pendurado e **desativa** — a subárvore inteira — quando há. É a mesma regra
-// da tela de Categorias, e ela mora numa RPC justamente para que a conversa e o
-// formulário não possam divergir. A ferramenta devolve o que de fato aconteceu, e
-// é isso que a IA tem de contar ao usuário.
-// =============================================================================
 import {
   type Ferramenta,
   caminho,
@@ -30,10 +7,6 @@ import {
   texto,
   traduzirErroDoBanco,
 } from './comum.ts'
-
-// -----------------------------------------------------------------------------
-// criar_categoria
-// -----------------------------------------------------------------------------
 
 const criar_categoria: Ferramenta = {
   escreve: true,
@@ -83,8 +56,6 @@ const criar_categoria: Ferramenta = {
     const id = Number(data)
     if (!Number.isFinite(id)) throw new Error('Não foi possível criar a categoria.')
 
-    // A linha é relida para o cartão trazer a cor e a data reais — inclusive
-    // quando a categoria já existia e a chamada só a reaproveitou.
     const { data: linhaBruta } = await ctx.cliente
       .from('category')
       .select('name, color, created_at')
@@ -97,12 +68,6 @@ const criar_categoria: Ferramenta = {
       created_at: string
     } | null
 
-    // O MESMO helper de `registrar_gasto`, e não uma cópia: `["Casa","Mercado"]`
-    // cria os dois degraus numa chamada só, e quem lembrasse apenas da folha
-    // deixaria `Casa` fora do contexto — o cartão sairia com "Mercado" no lugar de
-    // "Casa › Mercado". Ele também marca cada categoria nascida agora, alimentando
-    // a trava do laço; sem isso, uma criação LEGÍTIMA por esta ferramenta seria
-    // acusada de mentira e custaria uma rodada à toa.
     await lembrarCategoria(ctx, id)
 
     ctx.recibos.push({
@@ -118,10 +83,6 @@ const criar_categoria: Ferramenta = {
     return { ok: true, id, caminho: trilha.join(' › ') }
   },
 }
-
-// -----------------------------------------------------------------------------
-// renomear_categoria
-// -----------------------------------------------------------------------------
 
 const renomear_categoria: Ferramenta = {
   escreve: true,
@@ -185,8 +146,6 @@ const renomear_categoria: Ferramenta = {
       created_at: string
     }
 
-    // O contexto acompanha a renomeação: sem isto, um gasto registrado logo depois
-    // no mesmo turno mostraria o nome antigo no cartão.
     const conhecida = ctx.categorias.find((categoria) => categoria.id === linha.id)
     if (conhecida) {
       conhecida.nome = linha.name
@@ -207,10 +166,6 @@ const renomear_categoria: Ferramenta = {
     return { ok: true, id: linha.id, nome: linha.name }
   },
 }
-
-// -----------------------------------------------------------------------------
-// excluir_categoria
-// -----------------------------------------------------------------------------
 
 const excluir_categoria: Ferramenta = {
   escreve: true,
@@ -244,8 +199,6 @@ const excluir_categoria: Ferramenta = {
       )
     }
 
-    // O cartão é montado com o que a categoria ERA: depois da chamada, uma
-    // categoria excluída some da RLS e não há mais o que ler.
     const conhecida = ctx.categorias.find((categoria) => categoria.id === id)
 
     const { data, error } = await ctx.cliente.rpc('category_remove', { p_category_id: id })
@@ -266,9 +219,6 @@ const excluir_categoria: Ferramenta = {
     return {
       ok: true,
       id,
-      // O nome do desfecho vai em português e explicado, porque é ele que a IA vai
-      // transformar em frase: "desativada" sozinho não diz que a subárvore foi
-      // junto nem que dá para trazer de volta.
       resultado: excluida
         ? 'excluida'
         : 'desativada (ela tinha gastos ou subcategorias; foi para o submenu "Desativadas" com a subárvore inteira, e pode voltar de lá)',

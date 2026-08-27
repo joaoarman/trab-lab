@@ -1,33 +1,3 @@
-// =============================================================================
-// As ferramentas de GASTOS — o módulo mais rico da conversa.
-//
-// É aqui que a promessa do produto acontece: "gastei 20 no posto" vira um gasto
-// de R$ 20 em `Carro › Gasolina`, com a categoria criada na hora se ela não
-// existia. Todo o resto do sistema é revisão do que passou por estas funções.
-//
-// ## Cinco ferramentas, e o porquê de cada uma ser separada
-//
-//   registrar_gasto   — escreve. É a que roda o dia inteiro.
-//   editar_gasto      — escreve. Separada porque exige um id, e exigir um id é o
-//                       que impede a IA de "corrigir" um gasto que ela achou que
-//                       era o certo.
-//   excluir_gasto     — escreve. Idem, com a regra de confirmação do prompt.
-//   consultar_gastos  — lê a LISTA (e o total do recorte junto).
-//   resumo_de_gastos  — lê o TOTAL POR CATEGORIA, com a subárvore somada.
-//
-// As duas de leitura são separadas porque respondem a perguntas diferentes:
-// "quais gastos eu tive?" quer linhas; "onde eu mais gastei?" quer um ranking. Uma
-// ferramenta só devolvendo as duas coisas mandaria a lista inteira para o prompt
-// toda vez que o usuário só quisesse um número — e cada linha dessa lista é token
-// pago.
-//
-// ## Nenhuma delas escreve `amount_brl`
-//
-// A conversão de dólar para real é da trigger `expense_guard`, no banco, e o
-// cliente não tem grant na coluna. A IA manda valor, moeda e cotação — como a
-// tela manda. Se a conta morasse aqui, bastaria um bug de arredondamento no
-// modelo para o extrato passar a mentir de um jeito invisível.
-// =============================================================================
 import {
   type CategoriaConhecida,
   type ContextoDaFerramenta,
@@ -48,7 +18,6 @@ import {
 } from './comum.ts'
 import { resolverCotacao } from './cotacao.ts'
 
-/** As colunas lidas da `expense`. Nada de `select('*')`. */
 const COLUNAS =
   'id, category_id, name, amount, currency, exchange_rate, amount_brl, occurred_at, created_at'
 
@@ -56,8 +25,6 @@ interface LinhaDeGasto {
   id: number
   category_id: number | null
   name: string
-  // `numeric` chega do PostgREST como TEXTO ('50.00'): é assim que o Postgres
-  // protege a precisão que o float do JSON perderia. A conversão é na fronteira.
   amount: string | number
   currency: 'BRL' | 'USD'
   exchange_rate: string | number | null
@@ -66,14 +33,6 @@ interface LinhaDeGasto {
   created_at: string
 }
 
-/**
- * O gasto do jeito que o MODELO precisa lê-lo.
- *
- * A categoria vai como caminho legível (`"Carro › Gasolina"`), e não como id: o
- * modelo vai reescrever isso numa frase para o usuário, e um id no meio de uma
- * resposta é ruído. O id vai junto, num campo próprio, porque é dele que uma
- * edição ou exclusão seguinte vai precisar.
- */
 function paraModelo(linha: LinhaDeGasto, categorias: CategoriaConhecida[]) {
   const trilha = caminhoDaCategoria(categorias, linha.category_id)
 
@@ -90,44 +49,6 @@ function paraModelo(linha: LinhaDeGasto, categorias: CategoriaConhecida[]) {
   }
 }
 
-// -----------------------------------------------------------------------------
-// A categoria de um gasto
-// -----------------------------------------------------------------------------
-
-/**
- * O `category_id` a gravar, a partir do que o modelo mandou.
- *
- * Aceita as duas formas de propósito:
- *
- *   • **`categoria`** (o caminho em nomes) — a forma completa. Chama
- *     `category_resolve_path`, que reaproveita cada degrau existente e cria só o
- *     que falta. É a função que faz o usuário nunca precisar abrir a tela de
- *     Categorias antes de registrar.
- *   • **`categoria_id`** — o atalho, quando a IA reconheceu uma categoria da lista
- *     do prompt e nada precisa ser criado.
- *   • **nenhuma das duas** — gasto sem categoria. Caso legítimo: melhor um gasto
- *     sem gaveta do que um gasto não registrado.
- *
- * ## O CAMINHO GANHA DO ID quando os dois vêm juntos
- *
- * Esta precedência já foi a inversa, e o estrago foi grande: o modelo mandava
- * `categoria_id` (uma categoria antiga) **e** `categoria: ["Casa","Mercado"]`, o
- * código ficava com o id e **jogava o caminho fora sem dizer nada**. O gasto caía
- * na gaveta velha, a categoria nova nunca nascia, e a IA — que tinha pedido a
- * criação — anunciava ao usuário uma categoria que não existia em lugar nenhum.
- * Um defeito invisível dos dois lados: nem o modelo sabia que fora ignorado, nem o
- * usuário tinha como desconfiar.
- *
- * Agora o caminho vence, e é a escolha segura das duas: `category_resolve_path`
- * **reaproveita** o que já existe, então um caminho que aponta para uma categoria
- * existente resolve exatamente para ela. Ou seja, obedecer ao caminho nunca cria
- * duplicata — enquanto obedecer ao id descarta uma intenção que o modelo declarou.
- *
- * Uma categoria recém-criada é acrescentada ao contexto na hora, para que as
- * ferramentas seguintes DO MESMO TURNO já a enxerguem — sem isso, "gastei 20 no
- * posto e 40 no mercado" criaria a árvore no primeiro gasto e não a acharia no
- * segundo.
- */
 async function resolverCategoria(
   ctx: ContextoDaFerramenta,
   args: Record<string, unknown>,
@@ -148,16 +69,9 @@ async function resolverCategoria(
   const resolvido = Number(data)
   if (!Number.isFinite(resolvido)) return null
 
-  // `lembrarCategoria` traz a folha E as mães que faltarem, e marca cada uma como
-  // nascida neste turno — `category_resolve_path` devolve só o id, sem dizer o que
-  // criou e o que reaproveitou. Quem não estava na árvore do prompt é novo.
   await lembrarCategoria(ctx, resolvido)
   return resolvido
 }
-
-// -----------------------------------------------------------------------------
-// registrar_gasto
-// -----------------------------------------------------------------------------
 
 const registrar_gasto: Ferramenta = {
   escreve: true,
@@ -228,8 +142,6 @@ const registrar_gasto: Ferramenta = {
     const moedaDoGasto = moeda(args.moeda)
     const cotacao = await resolverCotacao(moedaDoGasto, numero(args.cotacao))
 
-    // Sem data dita, é agora. `new Date()` aqui é o instante real, e instante não
-    // tem fuso — o fuso só importa quando a IA diz um dia de calendário.
     const ocorreuEm =
       texto(args.ocorreu_em, 25) === null
         ? new Date().toISOString()
@@ -274,15 +186,9 @@ const registrar_gasto: Ferramenta = {
       criadoEm: linha.created_at,
     })
 
-    // O que volta para o modelo é o mínimo: ele não precisa reescrever nada disso
-    // (o cartão já vai na tela), só saber que deu certo e com que id.
     return { ok: true, id: linha.id, valor_em_reais: Number(linha.amount_brl) }
   },
 }
-
-// -----------------------------------------------------------------------------
-// editar_gasto
-// -----------------------------------------------------------------------------
 
 const editar_gasto: Ferramenta = {
   escreve: true,
@@ -324,10 +230,6 @@ const editar_gasto: Ferramenta = {
     const id = inteiro(args.id)
     if (id === null || id <= 0) throw new Error('Informe o id do gasto a editar.')
 
-    // A leitura ANTES do update não é só conveniência: o gasto pode estar em USD e
-    // ter só o valor alterado, e nesse caso a cotação a usar é a que já está lá.
-    // Recalcular a cotação de hoje reescreveria o passado — a conversão de um
-    // gasto de março tem de continuar valendo o dólar de março.
     const { data: atualBruto, error: erroAoLer } = await ctx.cliente
       .from('expense')
       .select(COLUNAS)
@@ -352,8 +254,6 @@ const editar_gasto: Ferramenta = {
     if (args.moeda !== undefined) {
       const moedaNova = moeda(args.moeda)
       mudancas.currency = moedaNova
-      // A moeda mudou: a cotação antiga não vale mais para ela. Ou o usuário disse
-      // a nova, ou o sistema busca — e em BRL ela é zerada.
       mudancas.exchange_rate = await resolverCotacao(moedaNova, numero(args.cotacao))
     } else if (args.cotacao !== undefined && atual.currency !== 'BRL') {
       mudancas.exchange_rate = numero(args.cotacao)
@@ -408,10 +308,6 @@ const editar_gasto: Ferramenta = {
   },
 }
 
-// -----------------------------------------------------------------------------
-// excluir_gasto
-// -----------------------------------------------------------------------------
-
 const excluir_gasto: Ferramenta = {
   escreve: true,
   schema: {
@@ -439,11 +335,6 @@ const excluir_gasto: Ferramenta = {
     const id = inteiro(args.id)
     if (id === null || id <= 0) throw new Error('Informe o id do gasto a excluir.')
 
-    // O guarda é do prompt, e este `if` é a segunda camada dele. Não é uma
-    // garantia — o modelo pode marcar true —, mas transforma "esqueci de
-    // confirmar" em erro visível em vez de gasto apagado em silêncio. A garantia
-    // de verdade é o soft-delete: `expense_remove` preenche `deleted_at`, e a
-    // linha continua no banco.
     if (args.confirmado !== true) {
       throw new Error(
         'Exclusão não confirmada. Mostre ao usuário qual gasto será apagado e espere ele confirmar.',
@@ -464,8 +355,6 @@ const excluir_gasto: Ferramenta = {
     const { error } = await ctx.cliente.rpc('expense_remove', { p_expense_id: id })
     if (error) traduzirErroDoBanco(error)
 
-    // O cartão do que foi apagado é lido ANTES da exclusão, e é o único registro
-    // que sobra na tela do que existia — depois disto a linha some da RLS.
     ctx.recibos.push({
       acao: 'excluido',
       tipo: 'gasto',
@@ -484,11 +373,6 @@ const excluir_gasto: Ferramenta = {
   },
 }
 
-// -----------------------------------------------------------------------------
-// consultar_gastos
-// -----------------------------------------------------------------------------
-
-/** Quantos gastos a consulta devolve por padrão, e no teto. */
 const LIMITE_PADRAO = 20
 const LIMITE_MAXIMO = 50
 
@@ -540,10 +424,6 @@ const consultar_gastos: Ferramenta = {
   },
 
   async executar(ctx, args) {
-    // Sem data nenhuma = todo o histórico. É o que faz "qual foi o último gasto
-    // que registrei?" ter resposta: a pergunta não traz recorte, e exigir um
-    // obrigava o modelo a inventar um — ou, pior, a responder pelo que ele via na
-    // conversa em vez de perguntar ao banco.
     const periodo = periodoOpcional(args.de, args.ate, ctx.fusoEmMinutos)
     if (!periodo) throw new Error('Período inválido. Use AAAA-MM-DD nas datas.')
 
@@ -572,9 +452,6 @@ const consultar_gastos: Ferramenta = {
     else if (ids) consulta = consulta.in('category_id', ids)
     if (busca) consulta = consulta.ilike('name', `%${busca}%`)
 
-    // As duas em paralelo: a lista (limitada, para caber no prompt) e o total (do
-    // recorte INTEIRO, somado pelo Postgres). Somar a lista limitada em JavaScript
-    // daria um número menor que a verdade, com cara de resposta certa.
     const [lista, relatorio] = await Promise.all([
       consulta,
       ctx.cliente.rpc('expense_report', {
@@ -589,7 +466,6 @@ const consultar_gastos: Ferramenta = {
     if (lista.error) traduzirErroDoBanco(lista.error)
     if (relatorio.error) traduzirErroDoBanco(relatorio.error)
 
-    // `returns table` volta como lista, mesmo com uma linha só.
     const [resumo] = (relatorio.data ?? []) as { total_brl: string | number; quantity: number }[]
     const linhas = (lista.data ?? []) as LinhaDeGasto[]
 
@@ -601,10 +477,6 @@ const consultar_gastos: Ferramenta = {
     }
   },
 }
-
-// -----------------------------------------------------------------------------
-// resumo_de_gastos
-// -----------------------------------------------------------------------------
 
 const resumo_de_gastos: Ferramenta = {
   schema: {
@@ -640,13 +512,6 @@ const resumo_de_gastos: Ferramenta = {
       total_brl: string | number
     }[]
 
-    // O banco devolve o gasto na categoria DIRETA em que ele foi lançado. Quem rola
-    // para as mães é aqui, porque é aqui que a árvore está — e é a rolagem que
-    // responde "quanto gastei com Carro" quando todo lançamento está nas folhas.
-    //
-    // Em CENTAVOS INTEIROS: um mês tem dezenas de linhas, e somar `number` binário
-    // ao longo delas acumula erro. O resultado volta
-    // para reais na hora de montar a resposta.
     const diretoEmCentavos = new Map<number, number>()
     const quantidadeDireta = new Map<number, number>()
     let semCategoriaEmCentavos = 0
@@ -686,9 +551,6 @@ const resumo_de_gastos: Ferramenta = {
       semCategoriaEmCentavos
 
     return {
-      // O total soma as categorias DIRETAS, nunca a coluna rolada: somar
-      // `total_com_subcategorias` de todo mundo contaria o mesmo dinheiro uma vez
-      // na folha e outra em cada mãe acima dela.
       total_em_reais: totalEmCentavos / 100,
       sem_categoria: {
         total: semCategoriaEmCentavos / 100,

@@ -7,10 +7,6 @@ const Collapsible = CollapsiblePrimitive.Root
 
 const CollapsibleTrigger = CollapsiblePrimitive.CollapsibleTrigger
 
-// A altura de destino da animação é publicada pelo Radix na variável
-// --radix-collapsible-content-height (não dá para animar `height: auto`); os
-// keyframes que a consomem estão no tailwind.config.ts. O `overflow-hidden` é
-// o que impede o conteúdo de vazar enquanto a altura ainda está correndo.
 const CollapsibleContent = React.forwardRef<
   React.ElementRef<typeof CollapsiblePrimitive.CollapsibleContent>,
   React.ComponentPropsWithoutRef<typeof CollapsiblePrimitive.CollapsibleContent>

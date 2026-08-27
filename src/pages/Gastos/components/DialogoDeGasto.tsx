@@ -21,34 +21,14 @@ import { reaisDeTexto, textoDeValor, VALOR_MAXIMO, VALOR_MINIMO } from '@/shared
 import { chaveDeErroDeGasto, criarGasto, salvarGasto } from '../supabase'
 import { SeletorDeCategoria } from './SeletorDeCategoria'
 
-/** O tamanho da coluna `name` no banco (`expense_name_len`). */
 const MAX_DO_NOME = 80
 
-/**
- * Registrar e editar um gasto — uma modal só.
- *
- * São o mesmo formulário porque são os mesmos campos, e separá-los duplicaria a
- * validação, a conversão e o tratamento de erro para ganhar um título diferente.
- *
- * ## Valor, moeda e cotação vêm de um bloco compartilhado
- *
- * [`EntradaDeValor`](../../../shared/components/EntradaDeValor.tsx) é o mesmo
- * componente que a modal de Receitas usa: ele guarda o comportamento da moeda
- * (trocar para US$ busca a cotação do momento, o campo continua editável, a
- * prévia em reais aparece embaixo) e a regra de que **editar não reprecifica** —
- * corrigir o nome de um gasto de março não pode reavaliá-lo pelo dólar de hoje.
- *
- * A prévia em reais é só uma prévia: `amount_brl` é calculado pela trigger
- * `expense_guard`, e o cliente sequer tem grant na coluna. Ver o cabeçalho de
- * `../supabase.ts`.
- */
 export function DialogoDeGasto({
   alvo,
   categorias,
   onFechar,
   onSalvo,
 }: {
-  /** `null` = fechada · `'novo'` = criando · um gasto = editando. */
   alvo: Gasto | 'novo' | null
   categorias: Categoria[]
   onFechar: () => void
@@ -65,8 +45,6 @@ export function DialogoDeGasto({
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
-  // Recarrega os campos a cada abertura. Sem isto, abrir "novo gasto" logo depois
-  // de ter editado o almoço de ontem traria os dados do almoço no formulário.
   useEffect(() => {
     if (!alvo) return
 
@@ -76,9 +54,6 @@ export function DialogoDeGasto({
     setMoeda(editando?.moeda ?? 'BRL')
     setCotacao(editando?.cotacao == null ? '' : String(editando.cotacao))
     setCategoriaId(editando?.categoriaId ?? 'sem')
-    // Um gasto novo nasce com o "agora" já preenchido: o caso comum é registrar
-    // o que acabou de acontecer, e nesse caso o campo de data não precisa de
-    // nenhum toque. Voltar para ontem continua sendo um clique.
     setOcorreuEm(paraCampoDeDataHora(editando ? new Date(editando.ocorreuEm) : new Date()))
     setErro(null)
   }, [alvo])
@@ -117,9 +92,6 @@ export function DialogoDeGasto({
       }
       onSalvo()
     } catch (falha) {
-      // O erro fica NA MODAL, não num toast: a correção é sempre num campo logo
-      // acima, e mandar a pessoa ler um aviso no canto da tela para voltar e
-      // corrigir aqui seria um desvio à toa.
       setErro(t(chaveDeErroDeGasto(falha)))
     } finally {
       setSalvando(false)
@@ -174,8 +146,6 @@ export function DialogoDeGasto({
 
           <div className="space-y-2">
             <Label htmlFor="gasto-data">{t('expenses.form.occurredAt')}</Label>
-            {/* Nativo. O `color-scheme` do theme.css é o que faz o ícone de
-                calendário vir claro no tema escuro. */}
             <Input
               id="gasto-data"
               type="datetime-local"

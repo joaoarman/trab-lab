@@ -17,33 +17,11 @@ import type { Gasto } from '@/shared/data/model'
 import { formatDate, formatMoney } from '@/shared/i18n/format'
 import { chaveDeErroDeGasto, removerGasto } from '../supabase'
 
-/**
- * A confirmação de exclusão de um gasto.
- *
- * ## Por que ela é tão mais simples que a das categorias
- *
- * Excluir uma categoria tem dois desfechos possíveis (excluir ou desativar), e
- * qual deles vale depende do que está pendurado nela — por isso aquela modal
- * consulta o banco antes de perguntar. Aqui não há nada pendurado num gasto:
- * excluir sempre exclui, e uma consulta prévia não teria o que descobrir.
- *
- * ## Mas ela repete o que vai sumir
- *
- * O valor e a data aparecem no texto de propósito. A lista pode ter dez linhas
- * parecidas ("Mercado", "Mercado", "Mercado"), e num celular a modal cobre
- * justamente a linha que estava sendo apontada. Repetir os dois dados é o que
- * transforma "tem certeza?" numa pergunta que dá para responder.
- *
- * É soft-delete no banco (`deleted_at`), mas o texto diz "vai sumir da lista" —
- * porque é isso que acontece para quem usa. Prometer que dá para desfazer seria
- * mentira: não existe tela que traga o gasto de volta.
- */
 export function DialogoDeRemocaoDeGasto({
   gasto,
   onFechar,
   onRemovido,
 }: {
-  /** `null` = fechada. */
   gasto: Gasto | null
   onFechar: () => void
   onRemovido: () => void

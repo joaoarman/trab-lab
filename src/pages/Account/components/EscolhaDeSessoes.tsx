@@ -6,25 +6,6 @@ import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/sh
 
 export type EscopoDeSaida = 'global' | 'others' | 'nenhuma'
 
-/**
- * O último passo de toda troca de credencial: o que fazer com as **outras
- * sessões**.
- *
- * ## Por que perguntar em vez de decidir
- *
- * Trocar a senha (ou o e-mail) não derruba sessão nenhuma por conta própria — os
- * tokens já emitidos continuam valendo até expirarem. Isso importa em dois
- * cenários opostos, e não dá para adivinhar em qual a pessoa está:
- *
- * - **"Trocaram minha senha"** — o computador do laboratório ficou logado, ou
- *   alguém descobriu a senha. Aqui a resposta certa é derrubar tudo, e derrubar
- *   só as outras não bastaria se a dúvida for justamente sobre esta.
- * - **"Só estava trocando por higiene"** — o celular e o notebook continuam
- *   logados de propósito, e deslogá-los seria uma punição gratuita.
- *
- * Decidir por conta própria erraria metade das vezes. A pergunta custa um clique
- * e é feita no único momento em que a pessoa tem o contexto para respondê-la.
- */
 export function EscolhaDeSessoes({
   titulo,
   onEscolher,

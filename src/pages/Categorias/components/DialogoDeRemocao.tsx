@@ -19,42 +19,12 @@ import { chaveDeErroDeCategoria, preverRemocao, removerCategoria } from '../supa
 
 const SEPARADOR = ' › '
 
-/**
- * A confirmação de exclusão — e o lugar onde a regra do módulo é **explicada**,
- * não só aplicada.
- *
- * ## Por que ela consulta o banco antes de perguntar
- *
- * Excluir aqui tem dois desfechos possíveis, e qual deles vale depende do que
- * está pendurado na categoria:
- *
- *   • **nada vinculado** → é excluída de vez;
- *   • **subcategorias ou lançamentos** → não é excluída, é **desativada** e vai
- *     para "Desativadas", de onde pode voltar.
- *
- * Uma modal genérica ("tem certeza?") deixaria a pessoa adivinhando qual dos dois
- * vai acontecer — e são consequências muito diferentes para o mesmo clique. Então
- * a modal abre perguntando ao banco (`preverRemocao`) e escreve o desfecho real,
- * com o número de subcategorias que vão junto. Até o rótulo do botão muda:
- * "Excluir" ou "Desativar".
- *
- * Nos dois casos ela também enuncia a REGRA, não só o resultado: quem vê
- * "será excluída" precisa saber que existe o outro caminho, senão vai supor que
- * excluir sempre apaga — e um dia vai clicar em algo que não some.
- *
- * ## A prévia não é a decisão
- *
- * Quem decide é o banco, no instante de agir: `removerCategoria` recalcula tudo e
- * devolve o que REALMENTE aconteceu, e é esse retorno que vira o aviso final. Se
- * algo mudar entre abrir a modal e confirmar, a tela conta a verdade.
- */
 export function DialogoDeRemocao({
   categoria,
   categorias,
   onFechar,
   onRemovido,
 }: {
-  /** `null` = fechada. */
   categoria: Categoria | null
   categorias: Categoria[]
   onFechar: () => void
@@ -77,9 +47,6 @@ export function DialogoDeRemocao({
       .then((resposta) => atual && setImpacto(resposta))
       .catch((falha) => atual && setErro(t(chaveDeErroDeCategoria(falha))))
 
-    // A resposta de uma categoria já fechada não pode cair na modal da próxima:
-    // sem esta trava, abrir "Carro" e fechar rápido para abrir "Casa" mostraria
-    // o impacto de Carro na confirmação de Casa.
     return () => {
       atual = false
     }
@@ -172,10 +139,6 @@ export function DialogoDeRemocao({
           <Button type="button" variant="ghost" onClick={onFechar} disabled={processando}>
             {t('common.cancel')}
           </Button>
-          {/* O rótulo só aparece depois da prévia. Enquanto ela não volta, o botão
-              é um spinner desabilitado: escrever "Excluir" ou "Desativar" antes
-              de saber a resposta seria anunciar um desfecho que ainda pode ser o
-              outro — e é justamente essa a informação que a modal existe para dar. */}
           <Button
             type="button"
             variant={vaiExcluir ? 'destructive' : 'default'}

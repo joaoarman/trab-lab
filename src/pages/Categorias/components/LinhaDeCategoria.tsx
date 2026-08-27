@@ -16,42 +16,12 @@ import {
 import { cn } from '@/shared/lib/utils'
 import type { Categoria, NoDeCategoria } from '@/shared/data/model'
 
-/** O que a linha sabe fazer. Vem da página, que é quem abre as modais. */
 export interface AcoesDaLinha {
   onNovaFilha: (mae: Categoria) => void
   onEditar: (categoria: Categoria) => void
   onRemover: (categoria: Categoria) => void
 }
 
-/**
- * Uma categoria na árvore — e, recursivamente, as filhas dela.
- *
- * ## A hierarquia se lê sem precisar decifrar
- *
- * Três coisas ao mesmo tempo dizem "isto está dentro daquilo": o recuo, a **linha
- * guia vertical** que desce da mãe ao longo das filhas, e a seta que só existe em
- * quem tem filhas. A guia é o que sustenta a leitura quando a árvore fica funda —
- * só o recuo, com quatro níveis na tela de um celular, vira uma coluna de textos
- * que não diz mais de quem cada um descende.
- *
- * ## Quem tem filha vira dropdown; quem não tem, não finge que vira
- *
- * A seta aparece **apenas** onde há o que fechar. Onde não há, o espaço dela é
- * reservado por um vão da mesma largura — sem isso os nomes de um mesmo nível
- * desalinhariam conforme tivessem ou não subcategorias, e o recuo deixaria de
- * significar profundidade.
- *
- * ## As ações ficam à vista
- *
- * Nada de aparecer só no hover: metade do uso deste sistema é no celular, onde
- * hover não existe. O que as mantém discretas é a cor (`muted-foreground` até
- * serem apontadas), não a ausência.
- *
- * A `+` fica solta, fora do menu, porque é a ação que a tela existe para
- * oferecer — criar uma subcategoria ali, naquele ponto da árvore, sem escolher a
- * mãe num formulário depois. Editar e excluir vão para o `⋯`: são menos
- * frequentes, e excluir num clique de distância seria um convite ao acidente.
- */
 export function LinhaDeCategoria({
   no,
   fechadas,
@@ -59,7 +29,6 @@ export function LinhaDeCategoria({
   acoes,
 }: {
   no: NoDeCategoria
-  /** Os ids **fechados**. O padrão é toda categoria vir aberta. */
   fechadas: Set<number>
   onAlternar: (id: number) => void
   acoes: AcoesDaLinha
@@ -92,8 +61,6 @@ export function LinhaDeCategoria({
           <span className="size-7 shrink-0" aria-hidden />
         )}
 
-        {/* A cor é dado do usuário, não token do tema — por isso vai num style.
-            Ver a nota no topo de SeletorDeCor.tsx. */}
         <span
           className="size-2.5 shrink-0 rounded-full"
           style={{ backgroundColor: no.cor }}
@@ -141,8 +108,6 @@ export function LinhaDeCategoria({
 
       {temFilhas && (
         <CollapsibleContent>
-          {/* `ml-3.5` alinha a guia com o centro da seta da mãe (size-7 = 28px,
-              metade = 14px = 3.5rem/4). Mexeu no tamanho do botão, mexa aqui. */}
           <ul className="ml-3.5 border-l border-border pl-2">
             {no.filhas.map((filha) => (
               <LinhaDeCategoria
@@ -159,8 +124,6 @@ export function LinhaDeCategoria({
     </>
   )
 
-  // Só quem tem filhas é um Collapsible. Envolver uma folha num dropdown vazio
-  // custaria um nó a mais por linha e um `aria-expanded` que mentiria.
   return temFilhas ? (
     <Collapsible asChild open={aberta} onOpenChange={() => onAlternar(no.id)}>
       <li>{corpo}</li>

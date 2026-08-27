@@ -2,17 +2,6 @@ import { Toaster as Sonner, toast } from 'sonner'
 
 import { useTheme } from '@/shared/context/ThemeContext'
 
-/**
- * Toaster — o aviso curto que aparece e some sozinho ("Alterações salvas").
- *
- * Montado uma vez no `App.tsx`; as telas só chamam `toast.success(...)`.
- *
- * O tema vem do `resolvedTheme` do projeto (já com 'system' resolvido), e não do
- * `next-themes` que o shadcn usa por padrão — este projeto tem o próprio
- * provider de tema. As cores saem dos tokens do `src/theme.css` via
- * `toastOptions`, para o toast não trazer a paleta própria do sonner e destoar
- * do resto do app.
- */
 export function Toaster() {
   const { resolvedTheme } = useTheme()
 

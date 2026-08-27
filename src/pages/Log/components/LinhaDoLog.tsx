@@ -18,33 +18,6 @@ import type { MensagemDaIA } from '@/shared/data/model'
 import { formatNumber } from '@/shared/i18n/format'
 import { custoDeIA } from './custo'
 
-/**
- * Uma linha do log — uma mensagem, com tudo o que ela custou e tudo o que ela fez.
- *
- * ## Por que a auditoria é dobrável, e não uma tabela
- *
- * A pergunta comum ("o que aconteceu neste dia?") se responde com o texto da
- * mensagem e o custo; a pergunta rara ("por que ESTA mensagem custou tanto?") pede
- * os argumentos crus que a IA mandou para cada ferramenta. Uma tabela com colunas
- * para tudo tornaria a pergunta comum ilegível para servir à rara. Aqui o resumo
- * fica sempre visível e o detalhe abre no clique — e só nas linhas em que houve
- * ferramenta, porque nas outras não há o que abrir.
- *
- * ## Os argumentos vão CRUS, como JSON
- *
- * É o ponto da auditoria: o que se quer ver é exatamente o que o modelo pediu, com
- * os nomes de campo dele. Formatar isso numa frase bonita ("registrou R$ 20 em
- * Carro › Gasolina") apagaria a diferença entre o que ele pediu e o que o banco
- * gravou — e é justamente essa diferença que se vai procurar aqui quando algo
- * parecer errado.
- *
- * ## A marca de "fora da conversa"
- *
- * Uma mensagem limpa pelo botão do Chat continua aqui, com o custo somando no
- * total. A etiqueta diz isso, porque sem ela a pessoa procuraria essa mensagem na
- * conversa e não a acharia — e concluiria que o log está mostrando algo que não
- * existe.
- */
 export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
   const { t, i18n } = useTranslation()
   const { perfil } = useAuth()
@@ -64,26 +37,11 @@ export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
     <li
       className={cn(
         'rounded-lg border border-border bg-card p-3',
-        // A recusa fica marcada aqui também, pela mesma razão de ficar no Chat:
-        // ela é o único desfecho em que o pedido do usuário não foi atendido, e
-        // procurar por esses casos é um uso legítimo desta tela.
         recusa && 'border-destructive/30 bg-destructive-muted/40',
       )}
     >
       <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
-        {/* Quem falou, em símbolo: numa lista longa, dois símbolos alternando são
-            mais rápidos de varrer do que duas palavras.
-
-            Do lado do usuário é a FOTO DELE, a mesma do menu da conta e das
-            bolhas do Chat — não um boneco genérico. A tela existe para reler o
-            que aconteceu numa conversa, e a conversa tem duas caras; um ícone
-            igual para todo mundo tiraria justamente a metade que dá o tom de
-            quem estava falando. Sem foto, o `PerfilAvatar` cai nas iniciais, que
-            ainda dizem mais do que o boneco. */}
         {doUsuario ? (
-          // `aria-hidden` como no resto da linha: quem falou já está dito pelo
-          // rótulo `sr-only` logo abaixo, e sem isto o leitor de tela anunciaria
-          // as iniciais do fallback antes dele — o mesmo dado, duas vezes.
           <span aria-hidden className="mt-0.5 shrink-0">
             <PerfilAvatar
               url={perfil ? urlDoAvatar(perfil) : null}
@@ -132,8 +90,6 @@ export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
               </Badge>
             )}
 
-            {/* O modelo vem gravado na linha, não da constante atual: uma troca de
-                modelo não pode reescrever o que o passado custou. */}
             {mensagem.modelo && (
               <Badge variant="secondary" className="font-mono font-normal">
                 {mensagem.modelo}
@@ -142,14 +98,8 @@ export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
           </div>
         </div>
 
-        {/* O extrato à direita no desktop, embaixo no celular. `ml-auto` +
-            `text-right` mantêm os números alinhados entre linhas de alturas
-            diferentes, que é o que permite varrer a coluna de custo de relance. */}
         <div className="ml-auto shrink-0 text-right">
           <p className="font-mono text-sm font-medium text-foreground">
-            {/* Null NÃO é zero: uma mensagem digitada não chamou IA nenhuma, e
-                escrever "US$ 0,00" ali diria que ela saiu de graça — quando a
-                verdade é que não houve chamada. O travessão diz isso. */}
             {mensagem.custoEmCentavosDeDolar === null
               ? '—'
               : custoDeIA(mensagem.custoEmCentavosDeDolar, 'linha')}
@@ -160,9 +110,6 @@ export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
                 input: formatNumber(mensagem.tokensEntrada ?? 0),
                 output: formatNumber(mensagem.tokensSaida ?? 0),
               })}
-              {/* O cacheado é um PEDAÇO da entrada, não um extra a somar — por
-                  isso entre parênteses, e só quando houve. É ele que explica uma
-                  entrada grande custando pouco. */}
               {mensagem.tokensEntradaCacheados ? (
                 <span className="ml-1">
                   {t('log.entry.cached', {
@@ -212,15 +159,10 @@ export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
                     </Badge>
                   </div>
 
-                  {/* A frase de erro é a MESMA que voltou para o modelo. É por ela
-                      que se entende uma rodada extra: ele errou o argumento, leu
-                      isto e tentou de novo — e as duas idas estão no custo. */}
                   {ferramenta.erro && (
                     <p className="mt-1.5 text-xs text-destructive">{ferramenta.erro}</p>
                   )}
 
-                  {/* `overflow-x-auto`: JSON não quebra linha sozinho, e sem isto
-                      um argumento longo esticaria a página inteira no celular. */}
                   <pre className="mt-1.5 overflow-x-auto rounded bg-background p-2 font-mono text-[0.6875rem] leading-relaxed text-muted-foreground">
                     {JSON.stringify(ferramenta.argumentos, null, 2)}
                   </pre>
@@ -234,16 +176,6 @@ export function LinhaDoLog({ mensagem }: { mensagem: MensagemDaIA }) {
   )
 }
 
-/**
- * O cabeçalho de um dia da lista.
- *
- * Usa `rotuloDoDia` de `shared/data/extrato.ts` — o MESMO rótulo dos extratos de
- * Gastos e Receitas. É de propósito: as três telas listam coisas por dia, e um
- * formato de data diferente em cada uma faria o app parecer três apps.
- *
- * (O separador do Chat é o único que foge, e ele foge por um motivo: numa conversa
- * "Hoje" e "Ontem" se leem melhor que a data por extenso.)
- */
 export function DiaDoLog({ data, children }: { data: string; children: ReactNode }) {
   return (
     <section className="space-y-2" aria-label={rotuloDoDia(data)}>

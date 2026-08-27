@@ -14,18 +14,6 @@ import { Separator } from '@/shared/components/ui/separator'
 import { ChangeEmailDialog } from './ChangeEmailDialog'
 import { ChangePasswordDialog } from './ChangePasswordDialog'
 
-/**
- * O card de Segurança: as credenciais de entrada.
- *
- * Separado do card de Perfil de propósito. Nome e foto são **dados**: mudam à
- * vontade, num "Salvar" só, e errar não custa nada. E-mail e senha são **as
- * chaves da conta**: cada um exige a senha atual, cada um pergunta sobre as
- * outras sessões, e errar tranca a pessoa do lado de fora. Misturar os dois num
- * formulário só faria a troca de senha parecer tão banal quanto corrigir o nome.
- *
- * Por isso os dois abrem em modal, com o próprio fluxo, em vez de virarem mais
- * dois campos na tela.
- */
 export function SecurityCard({ email }: { email: string }) {
   const { t } = useTranslation()
   const [trocandoEmail, setTrocandoEmail] = useState(false)

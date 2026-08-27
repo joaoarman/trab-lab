@@ -17,43 +17,8 @@ import { DialogoDeReceita } from './components/DialogoDeReceita'
 import { DialogoDeRemocaoDeReceita } from './components/DialogoDeRemocaoDeReceita'
 import { LinhaDeReceita } from './components/LinhaDeReceita'
 
-/** O recorte com que a tela abre: o mês corrente — ver `shared/utils/datas.ts`. */
 const ATALHO_INICIAL: Atalho = 'esteMes'
 
-/**
- * Receitas — `/income`.
- *
- * O dinheiro que entrou, no recorte que a pessoa escolher.
- *
- * ## Esta tela não é o caminho principal de entrada
- *
- * O eixo do produto é o **Chat**: registrar deve custar uma frase. Aqui se **vê,
- * revisa e ajusta** o que a conversa gravou — e se lança à mão quando for mais
- * rápido. Por isso a tela é, antes de tudo, uma lista com filtro e um total; o
- * botão de criar existe, mas não é o herói.
- *
- * ## Mais simples que Gastos, e de propósito
- *
- * Receita não tem categoria, então esta página não carrega
- * a árvore, não tem seletor de categoria no filtro nem no formulário, e tem **um
- * único estado de erro** em vez de dois — não há uma segunda busca que possa
- * falhar sozinha. O filtro é só o período, e o `useEffect` que recarrega depende
- * de uma coisa só, o que dispensa a trava de "primeira busca" que Gastos precisa.
- *
- * ## O total soma reais, sempre
- *
- * `valorEmBrl` é a coluna somada, nunca `valor`: uma receita em dólar e uma em
- * real na mesma soma não dariam dinheiro nenhum. Quem converte é o banco, na
- * gravação, pela cotação do dia em que o dinheiro entrou.
- *
- * ## Um `recarregar()` depois de cada mudança
- *
- * As modais não devolvem a linha alterada para ser costurada no estado local:
- * elas avisam que algo mudou e a lista é buscada de novo. É uma requisição a
- * mais, e ela paga por si — uma receita editada pode sair do período filtrado.
- * Decidir isso no cliente seria reescrever, em TypeScript, o `where` que o banco
- * acabou de aplicar.
- */
 export function ReceitasPage() {
   const { t } = useTranslation()
 
@@ -83,9 +48,6 @@ export function ReceitasPage() {
     void recarregar()
   }, [recarregar])
 
-  // `somar`, e não um `reduce` com `+`: o `number` do JavaScript é binário, e
-  // acumular reais direto acaba mostrando um total um centavo fora da soma que a
-  // pessoa faz na calculadora. Ver `shared/utils/dinheiro.ts`.
   const total = useMemo(() => somar(receitas.map((receita) => receita.valorEmBrl)), [receitas])
 
   const dias = useMemo(
@@ -95,8 +57,6 @@ export function ReceitasPage() {
 
   return (
     <>
-      {/* Sem título aqui: quem escreve "Receitas" no topo é o header, a partir de
-          `navigation.ts`. Repeti-lo daria dois <h1> na mesma tela. */}
       <div className="space-y-6">
         {erro && (
           <Alert variant="destructive" className="justify-between">
@@ -112,9 +72,6 @@ export function ReceitasPage() {
 
         <Card>
           <CardContent className="p-4">
-            {/* Três campos: uma coluna no celular, três no tablet para cima. O
-                quarto campo de Gastos (a categoria) não existe aqui, então a
-                grade cabe mais cedo. */}
             <div className="grid gap-4 sm:grid-cols-3">
               <FiltroDePeriodo
                 recorte={filtro}
@@ -129,9 +86,6 @@ export function ReceitasPage() {
 
         <Card>
           <CardHeader className="flex-row flex-wrap items-center justify-between gap-3 space-y-0 p-4">
-            {/* O total é o que a pessoa veio ver: fica no topo, grande, em
-                `--income` e em `font-mono` — dígitos monoespaçados alinham na
-                vertical, e é assim que uma coluna de dinheiro se lê. */}
             <span className="min-w-0">
               <span className="block text-xs text-muted-foreground">
                 {t('income.page.count', { count: receitas.length })}
@@ -189,9 +143,6 @@ export function ReceitasPage() {
         alvo={formulario}
         onFechar={() => setFormulario(null)}
         onSalvo={() => {
-          // Fecha ANTES de recarregar: a modal reajusta os campos quando o alvo
-          // muda, e trocar a lista com ela ainda aberta piscaria o formulário
-          // durante a animação de saída.
           setFormulario(null)
           void recarregar()
         }}
@@ -209,14 +160,6 @@ export function ReceitasPage() {
   )
 }
 
-/**
- * A lista sem nada para mostrar.
- *
- * Não diz "nenhuma receita" e para por aí: a tela tem filtro, e a causa mais
- * comum de uma lista vazia é o recorte, não a ausência de receitas. O texto
- * aponta para as duas saídas — mexer no período ou registrar a primeira — e conta
- * que o Chat também registra, que é o caminho pretendido do sistema.
- */
 function EstadoVazio({ onCriar }: { onCriar: () => void }) {
   const { t } = useTranslation()
 

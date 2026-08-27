@@ -17,32 +17,11 @@ import type { Receita } from '@/shared/data/model'
 import { formatDate, formatMoney } from '@/shared/i18n/format'
 import { chaveDeErroDeReceita, removerReceita } from '../supabase'
 
-/**
- * A confirmação de exclusão de uma receita.
- *
- * ## Ela repete o que vai sumir
- *
- * O valor e a data de recebimento aparecem no texto de propósito. A lista pode
- * ter várias linhas parecidas ("Freela", "Freela"), e num celular a modal cobre
- * justamente a que estava sendo apontada. Repetir os dois dados é o que
- * transforma "tem certeza?" numa pergunta que dá para responder.
- *
- * ## Nada é consultado antes de perguntar
- *
- * Diferente da modal de categorias — que pergunta ao banco se a categoria será
- * excluída ou desativada —, aqui não há desfecho a descobrir: nada se pendura
- * numa receita, então excluir sempre exclui.
- *
- * É soft-delete no banco (`deleted_at`), mas o texto diz "sai da lista" — porque
- * é isso que acontece para quem usa. Prometer que dá para desfazer seria mentira:
- * não existe tela que traga a receita de volta.
- */
 export function DialogoDeRemocaoDeReceita({
   receita,
   onFechar,
   onRemovida,
 }: {
-  /** `null` = fechada. */
   receita: Receita | null
   onFechar: () => void
   onRemovida: () => void

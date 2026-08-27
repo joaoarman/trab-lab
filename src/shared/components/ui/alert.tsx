@@ -3,13 +3,6 @@ import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/shared/lib/utils'
 
-/**
- * Alert — uma faixa de aviso dentro do conteúdo.
- *
- * A variante `warning` é a que motivou o componente: o "alterações não salvas"
- * da tela de conta. Ela usa os tokens `--warning*` do `src/theme.css` — nada de
- * âmbar escrito à mão aqui.
- */
 const alertVariants = cva(
   'relative w-full rounded-md border px-3 py-2 text-sm [&>svg]:size-4 [&>svg]:shrink-0',
   {

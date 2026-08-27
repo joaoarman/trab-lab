@@ -9,6 +9,8 @@
     "closeMenu": "Fechar menu",
     "chat": "Chat",
     "chatSubtitle": "Registre e consulte suas finanças conversando",
+    "statement": "Fatura",
+    "statementSubtitle": "Gastos e receitas na mesma lista, em ordem",
     "expenses": "Gastos",
     "expensesSubtitle": "Tudo que saiu, por categoria e período",
     "income": "Receitas",
@@ -128,7 +130,7 @@
     },
     "welcome": {
       "title": "Fale, que eu anoto",
-      "description": "Registre e consulte seus gastos e receitas conversando — por texto ou por áudio. Eu escolho a categoria e mostro o que salvei.",
+      "description": "Registre e consulte seus gastos e receitas conversando, por texto ou por áudio. Eu escolho a categoria e mostro o que salvei.",
       "examples": {
         "expense": "Gastei 20 no posto de gasolina",
         "dollar": "Paguei 12 dólares na assinatura de ontem",
@@ -140,7 +142,7 @@
     "clear": {
       "action": "Limpar conversa",
       "title": "Limpar a conversa?",
-      "description": "As mensagens somem desta tela, mas os seus gastos, receitas e categorias continuam intactos — limpar a conversa não desfaz nada do que ela registrou. O histórico e o custo seguem no Log da IA.",
+      "description": "As mensagens somem desta tela, mas os seus gastos, receitas e categorias continuam intactos: limpar a conversa não desfaz nada do que ela registrou. O histórico e o custo seguem no Log da IA.",
       "confirm": "Limpar",
       "done": "Conversa limpa."
     },
@@ -180,6 +182,33 @@
       "unknown": "Algo deu errado. Tente de novo."
     }
   },
+  "statement": {
+    "page": {
+      "count_one": "{{count}} lançamento no período",
+      "count_other": "{{count}} lançamentos no período",
+      "in": "Entrou",
+      "out": "Saiu",
+      "balance": "Saldo",
+      "loadFailed": "Não foi possível carregar a fatura.",
+      "categoriesFailed": "Não foi possível carregar as categorias. Os gastos aparecem sem o nome delas.",
+      "retry": "Tentar de novo"
+    },
+    "filters": {
+      "type": "Mostrar",
+      "all": "Tudo",
+      "onlyIncome": "Só receitas",
+      "onlyExpenses": "Só gastos"
+    },
+    "list": {
+      "income": "Receita",
+      "noCategory": "Sem categoria"
+    },
+    "empty": {
+      "title": "Nada nesta fatura",
+      "description": "Nenhum gasto ou receita neste período. Mude o recorte acima para procurar em outra data, ou registre pelo chat: basta escrever \"gastei 20 no posto\".",
+      "action": "Registrar pelo chat"
+    }
+  },
   "expenses": {
     "page": {
       "count_one": "{{count}} gasto no período",
@@ -191,7 +220,7 @@
     },
     "empty": {
       "title": "Nenhum gasto por aqui",
-      "description": "Nada foi registrado neste período com esse filtro. Mude o recorte acima para procurar em outra data — ou registre um gasto agora. No chat, basta escrever \"gastei 20 no posto\".",
+      "description": "Nada foi registrado neste período com esse filtro. Mude o recorte acima para procurar em outra data, ou registre um gasto agora. No chat, basta escrever \"gastei 20 no posto\".",
       "action": "Registrar um gasto"
     },
     "filters": {
@@ -238,7 +267,7 @@
     },
     "empty": {
       "title": "Nenhuma receita por aqui",
-      "description": "Nada foi registrado neste período. Mude o recorte acima para procurar em outra data — ou registre uma receita agora. No chat, basta escrever \"recebi 3000 de salário\".",
+      "description": "Nada foi registrado neste período. Mude o recorte acima para procurar em outra data, ou registre uma receita agora. No chat, basta escrever \"recebi 3000 de salário\".",
       "action": "Registrar uma receita"
     },
     "list": {
@@ -282,7 +311,7 @@
     },
     "empty": {
       "title": "Nenhuma categoria ainda",
-      "description": "Categorias organizam seus gastos e receitas numa hierarquia — Carro › Gasolina, Casa › Mercado › Feira. Crie a primeira aqui, ou deixe o chat criar sozinho quando você registrar um gasto.",
+      "description": "Categorias organizam seus gastos e receitas numa hierarquia: Carro › Gasolina, Casa › Mercado › Feira. Crie a primeira aqui, ou deixe o chat criar sozinho quando você registrar um gasto.",
       "action": "Criar a primeira",
       "allInactive": "Todas as suas categorias estão desativadas. Traga alguma de volta abaixo, ou crie uma nova."
     },
@@ -316,7 +345,7 @@
       "title": "Excluir {{name}}?",
       "checking": "Vendo o que está vinculado…",
       "willDelete": "Nada está vinculado: será excluída de vez.",
-      "willDeleteHint": "Se houvesse subcategorias ou lançamentos, ela seria apenas desativada — e você poderia trazê-la de volta.",
+      "willDeleteHint": "Se houvesse subcategorias ou lançamentos, ela seria apenas desativada, e você poderia trazê-la de volta.",
       "willDeactivate": "Não será excluída: será desativada.",
       "becauseChildren_one": "{{count}} subcategoria vai junto",
       "becauseChildren_other": "{{count}} subcategorias vão junto",
@@ -451,5 +480,418 @@
     "refreshRate": "Buscar a cotação de agora",
     "rateFailed": "Não conseguimos buscar a cotação. Informe o valor do dólar à mão para continuar.",
     "preview": "Equivale a {{value}}"
+  },
+  "slides": {
+    "page": {
+      "title": "Slides",
+      "subtitle": "A apresentação do trabalho, rodando dentro do próprio sistema"
+    },
+    "ui": {
+      "previous": "Anterior",
+      "next": "Próximo",
+      "fullscreen": "Tela cheia",
+      "exitFullscreen": "Sair da tela cheia",
+      "counter": "{{atual}} / {{total}}",
+      "index": "Ir para o slide",
+      "open": "Abrir",
+      "hint": "← → navegam · F entra em tela cheia",
+      "deckLabel": "Apresentação do trabalho"
+    },
+    "capa": {
+      "eyebrow": "Laboratório de Desenvolvimento de Software",
+      "title": "Self OS",
+      "tagline": "Um ecossistema de organização pessoal",
+      "author": "João Arman",
+      "course": "Análise e Desenvolvimento de Sistemas · IFRS Campus Canoas",
+      "domain": "lab.selfos.com.br"
+    },
+    "problema": {
+      "eyebrow": "Motivação",
+      "title": "Controlar e organizar informações dá trabalho de digitação",
+      "itens": [
+        "Abrir o app, achar a tela, preencher todos os campos do que se deseja cadastrar e salvar.",
+        "Fricção suficiente para a pessoa desistir depois de uma semana.",
+        "Informações incompletas não significam nada (financeiras, alimentação, calorias): não dá para decidir nada com elas.",
+        "Não é falta de aplicativo, existem vários no mercado. O que pesa é o custo de registrar tudo isso."
+      ],
+      "kicker": "Aqui, registrar custa uma frase."
+    },
+    "solucao": {
+      "eyebrow": "Descrição geral",
+      "title": "O que é o Self OS",
+      "lead": "Um auxiliar de organização pessoal: a pessoa registra e consulta as próprias informações conversando, por texto ou por áudio. O primeiro módulo é o financeiro.",
+      "cards": [
+        {
+          "title": "Registrar",
+          "body": "“acabei de gastar R$ 20 no posto de gasolina” → a IA cadastra o gasto em Carro › Gasolina, cria a categoria se ela não existir e responde com um cartão de confirmação."
+        },
+        {
+          "title": "Consultar",
+          "body": "“quanto gastei de gasolina esse mês?” soma a subcategoria. “quanto gastei com carro?” soma Carro e todos os descendentes da árvore."
+        },
+        {
+          "title": "Corrigir ou excluir",
+          "body": "“na verdade foram 30” e a IA ajusta na hora. Para excluir, ela mostra o registro e pergunta antes: apagar é a única coisa que não acontece sem a sua confirmação."
+        }
+      ],
+      "footer": "As telas de Gastos, Receitas e Categorias existem para ver, revisar e ajustar o que a conversa gera. Elas não são o caminho obrigatório de entrada de dados."
+    },
+    "fluxo": {
+      "eyebrow": "O eixo do produto",
+      "title": "O que acontece quando você manda uma frase",
+      "passos": [
+        {
+          "title": "Você fala",
+          "body": "“acabei de gastar R$ 200 de gasolina”, por texto ou por áudio, de onde estiver."
+        },
+        {
+          "title": "A IA entende",
+          "body": "Tira da frase o valor, onde foi o gasto, quando aconteceu e em que categoria ele cabe."
+        },
+        {
+          "title": "O sistema registra",
+          "body": "O gasto entra no seu extrato. Se a categoria certa ainda não existir, ela é criada na hora."
+        },
+        {
+          "title": "Volta um cartão",
+          "body": "A confirmação mostra o valor, onde foi, a hierarquia inteira da categoria, a data e a hora."
+        },
+        {
+          "title": "Errou? Uma frase corrige",
+          "body": "“na verdade foram 180” e pronto. Para apagar, a IA mostra o registro e pergunta antes."
+        }
+      ]
+    },
+    "fluxoTecnico": {
+      "eyebrow": "Por dentro",
+      "title": "O que acontece quando você manda uma frase (parte técnica)",
+      "passos": {
+        "mensagem": {
+          "title": "A mensagem",
+          "body": "Texto ou áudio. O áudio passa antes por uma Edge Function e chega ao chat já como texto."
+        },
+        "pedido": {
+          "title": "O pedido à API",
+          "body": "O sistema monta o base prompt, o contexto do dia e a árvore de categorias do usuário, anexa as 13 ferramentas e o histórico da conversa, e envia tudo junto com a frase. Clique nos trechos sublinhados para ver o que vai em cada um."
+        },
+        "escolha": {
+          "title": "A escolha do modelo",
+          "body": "A resposta não vem em texto: vem a ferramenta que o modelo quer chamar, com os argumentos que ele extraiu da frase."
+        },
+        "ferramenta": {
+          "title": "A ferramenta roda",
+          "body": "A função é fixa: a tabela e as colunas são sempre as mesmas, escritas por nós em ferramentas/gastos.ts. A IA preenche só os valores, e cada um passa por uma validação antes de chegar ao banco. Ela nunca escreve SQL nem escolhe onde gravar."
+        }
+      },
+      "verDetalhe": "Clique para ver o texto de verdade",
+      "detalhes": {
+        "basePrompt": {
+          "rotulo": "base prompt",
+          "titulo": "O base prompt",
+          "descricao": "O prompt grande, o mesmo que a Edge Function manda em toda mensagem: quem a IA é, o que ela faz, como escolhe a categoria, como trata datas e o que ela nunca deve fazer. São {{linhas}} linhas, e este texto vem direto do arquivo do sistema."
+        },
+        "contexto": {
+          "rotulo": "contexto de hoje",
+          "titulo": "O contexto desta conversa",
+          "descricao": "O bloco que muda a cada mensagem. A data é a DO USUÁRIO, não a do servidor: é ela que faz \"ontem\" e \"sexta passada\" caírem no dia certo de quem está falando."
+        },
+        "arvore": {
+          "rotulo": "árvore de categorias",
+          "titulo": "A árvore de categorias",
+          "descricao": "A hierarquia do usuário vai inteira no prompt, com os ids, para a IA escolher a gaveta na primeira tentativa, sem uma ida ao banco. As desativadas vão junto, marcadas. Aqui com uma árvore de exemplo; o formato é o real."
+        }
+      }
+    },
+    "personas": {
+      "eyebrow": "Para quem",
+      "title": "Personas",
+      "pessoas": [
+        {
+          "nome": "João, 24",
+          "papel": "Estudante e engenheiro de software",
+          "cita": "“Nunca sei quanto eu gasto em assinaturas.”",
+          "dor": "A renda vem dos projetos, e cada projeto puxa uma assinatura: Supabase, Firebase, Resend, VPS ou hospedagem, domínio, Claude, GPT, Cursor e créditos de API. São muitas cobranças pequenas, várias em dólar, espalhadas pelo mês.",
+          "precisa": "Registrar cada assinatura em segundos e perguntar quanto um projeto custou no mês, sem abrir fatura nenhuma."
+        },
+        {
+          "nome": "Giulia, 34",
+          "papel": "Controla tudo numa planilha",
+          "cita": "“Minha planilha só funciona no computador.”",
+          "dor": "Anota gastos e ganhos há anos, mas abrir a planilha no celular é ruim de ver e nada prático. E para responder uma pergunta específica, ela tem que ir atrás em um relatório.",
+          "precisa": "Lançar pelo celular com uma frase e perguntar o que quiser, sem montar relatório para cada dúvida."
+        },
+        {
+          "nome": "Carlos, 63",
+          "papel": "Mexe nos próprios carros",
+          "cita": "“Não faço ideia de quanto os carros me custam.”",
+          "dor": "Tem mais de um carro, e um deles é antigo. Gasolina (um bebe muito), IPVA, manutenção, peças e as modificações que ele mesmo faz caem todas no mesmo monte.",
+          "precisa": "Uma categoria por carro, com gasolina, imposto e manutenção embaixo, e o total de cada uma quando ele pedir."
+        }
+      ]
+    },
+    "historias": {
+      "eyebrow": "User stories",
+      "title": "Como usuário, quero…",
+      "itens": [
+        {
+          "quero": "registrar um gasto mandando uma frase",
+          "para": "para não precisar abrir formulário nenhum"
+        },
+        {
+          "quero": "ditar por áudio",
+          "para": "para registrar sem parar o que estou fazendo"
+        },
+        {
+          "quero": "que a categoria seja escolhida (e criada) sozinha",
+          "para": "para não ter que organizar nada antes de começar"
+        },
+        {
+          "quero": "perguntar “quanto gastei com carro esse mês?”",
+          "para": "para ver o total da categoria e de tudo abaixo dela"
+        },
+        {
+          "quero": "corrigir e excluir pela conversa",
+          "para": "para não caçar o lançamento numa lista"
+        },
+        {
+          "quero": "ver o extrato por período, dia a dia",
+          "para": "para revisar o mês com calma no computador"
+        },
+        {
+          "quero": "moldar a árvore de categorias",
+          "para": "para o sistema falar do meu dinheiro do meu jeito"
+        },
+        {
+          "quero": "lançar em dólar com a cotação do dia",
+          "para": "para a compra de fora entrar certa no extrato"
+        },
+        {
+          "quero": "ver o que a IA fez e quanto custou",
+          "para": "para confiar no que foi registrado no meu nome"
+        }
+      ]
+    },
+    "requisitos": {
+      "eyebrow": "Requisitos funcionais",
+      "titleEssenciais": "O que o sistema tem que fazer",
+      "titleDemais": "Importantes e desejáveis",
+      "nota": "Priorização MoSCoW: essencial (must), importante (should), desejável (could).",
+      "prioridade": {
+        "ESSENCIAL": "Essencial",
+        "IMPORTANTE": "Importante",
+        "DESEJAVEL": "Desejável"
+      },
+      "status": {
+        "PRONTO": "Pronto",
+        "FUTURO": "Futuro"
+      },
+      "colunas": {
+        "id": "#",
+        "requisito": "Requisito",
+        "prioridade": "Prioridade",
+        "status": "Status"
+      },
+      "itens": {
+        "RF01": "Criar conta e entrar com e-mail e senha",
+        "RF02": "Registrar um gasto conversando, por texto",
+        "RF03": "Registrar por áudio (a fala vira texto)",
+        "RF04": "Categorizar o gasto sozinho, criando a categoria quando ela não existir",
+        "RF05": "Registrar uma receita conversando",
+        "RF06": "Consultar totais por categoria e período pela conversa, somando a subárvore",
+        "RF07": "Editar e excluir gasto e receita pela conversa",
+        "RF08": "Ver o extrato de gastos e de receitas, agrupado por dia, com filtro de período",
+        "RF09": "Gerenciar a árvore de categorias: criar, renomear, mover, desativar e excluir",
+        "RF10": "Recusar o que não é do sistema, em vez de inventar resposta",
+        "RF11": "Lançar em outra moeda, guardando a cotação do momento",
+        "RF12": "Auditar a IA: ferramentas, tokens e custo de cada mensagem",
+        "RF13": "Limpar a conversa sem perder a auditoria",
+        "RF14": "Editar o perfil, a foto e a senha; escolher tema e idioma",
+        "RF15": "Confirmar e-mail e recuperar a senha esquecida",
+        "RF16": "Entrar com o Google e excluir a própria conta pelo app",
+        "RF17": "Puxar as transações do banco por Open Finance",
+        "RF18": "Abrir os próximos módulos: Família, Agenda, Treinos, Alimentação e Tarefas",
+        "RF19": "Usar a própria chave de IA e escolher o modelo, com mensalidade menor em troca"
+      }
+    },
+    "casosDeUso": {
+      "eyebrow": "Análise",
+      "title": "Diagrama de casos de uso",
+      "sistema": "Self OS",
+      "atores": {
+        "usuario": "Usuário",
+        "ia": "IA (OpenAI)",
+        "cotacao": "Cotação (AwesomeAPI)"
+      },
+      "casos": {
+        "entrar": "Entrar / criar conta",
+        "conversar": "Conversar com o assistente",
+        "ditar": "Ditar por áudio",
+        "registrarGasto": "Registrar gasto",
+        "registrarReceita": "Registrar receita",
+        "consultar": "Consultar totais",
+        "editar": "Editar lançamento",
+        "excluir": "Excluir lançamento",
+        "criarCategoria": "Criar categoria",
+        "recusar": "Recusar assunto fora do escopo",
+        "extrato": "Ver extrato por período",
+        "categorias": "Gerenciar categorias",
+        "auditar": "Auditar o consumo da IA",
+        "conta": "Gerenciar a conta"
+      },
+      "legenda": "«include» sempre acontece · «extend» acontece em certos casos"
+    },
+    "banco": {
+      "eyebrow": "Projeto",
+      "title": "Diagrama ER do banco"
+    },
+    "arquitetura": {
+      "eyebrow": "Construção",
+      "title": "Stack e arquitetura",
+      "blocos": [
+        {
+          "title": "Front-end",
+          "body": "React + Vite + TypeScript, Tailwind e a UI própria do projeto (shadcn/ui)."
+        },
+        {
+          "title": "Back-end",
+          "body": "Supabase: banco, autenticação e storage. Nenhum servidor próprio para manter. A ideia é migrar para NestJS mais adiante; o MVP começa no Supabase porque fica de pé muito mais rápido."
+        },
+        {
+          "title": "A IA",
+          "body": "Duas Edge Functions: o laço da conversa (13 ferramentas) e a transcrição do áudio."
+        },
+        {
+          "title": "A segurança",
+          "body": "RLS por dono em todas as tabelas: cada uma tem uma coluna profile_id ligada ao usuário logado, e o banco só devolve as linhas dele."
+        }
+      ]
+    },
+    "telas": {
+      "eyebrow": "Protótipo e implementação",
+      "title": "As telas, já implementadas",
+      "lead": "Não há protótipo em ferramenta de desenho: as telas estão de pé, e esta apresentação está rodando dentro do próprio sistema.",
+      "extras": {
+        "auth": "Login e cadastro",
+        "authSubtitle": "Fora do shell; deslogado não acessa nada",
+        "account": "Minha conta",
+        "accountSubtitle": "Perfil, foto, senha, tema e idioma"
+      }
+    },
+    "validacao": {
+      "eyebrow": "Validação",
+      "title": "Como as telas são validadas",
+      "etapas": {
+        "heuristicas": {
+          "title": "Heurísticas de Nielsen",
+          "body": "Percorrer as dez heurísticas de Nielsen tela a tela e anotar o que cada uma acusa: visibilidade do estado, prevenção de erro, saída fácil e consistência entre os módulos."
+        },
+        "responsividade": {
+          "title": "Responsividade real",
+          "body": "Cada tela conferida no celular e no desktop: o chat pelo telefone, as listas e o log pelo monitor."
+        },
+        "teste": {
+          "title": "Teste de usabilidade por tarefas",
+          "body": "5 usuários, 4 tarefas: registrar um gasto por texto, ditar um por áudio, descobrir quanto gastou num assunto no mês e corrigir um lançamento errado."
+        },
+        "metricas": {
+          "title": "Métricas",
+          "body": "Taxa de conclusão sem ajuda, tempo por tarefa e número de erros, mais o SUS (System Usability Scale), com meta de 68 pontos."
+        },
+        "reteste": {
+          "title": "Ajuste e reteste",
+          "body": "Corrigir o que travou mais de um usuário e repetir só as tarefas afetadas."
+        }
+      },
+      "estados": {
+        "FEITO": "Feito",
+        "PLANEJADO": "Próxima entrega"
+      }
+    },
+    "concorrentes": {
+      "eyebrow": "Mercado",
+      "title": "Produtos similares",
+      "itens": [
+        {
+          "nome": "Meu Assessor",
+          "onde": "WhatsApp · assinatura",
+          "faz": "Time de assessores de IA: finanças, agenda, tarefas e documentos, com Open Finance e compartilhamento com a família.",
+          "falta": "Vive dentro do WhatsApp e não mostra o que a IA fez nem quanto custou."
+        },
+        {
+          "nome": "Magie",
+          "onde": "WhatsApp · conta de pagamento",
+          "faz": "Assistente financeira que de fato movimenta dinheiro: Pix por áudio ou foto, boletos e saldo rendendo.",
+          "falta": "É banco conversacional, não controle de gastos: não organiza categoria nem fecha o mês."
+        },
+        {
+          "nome": "Mobills · Organizze",
+          "onde": "App próprio · freemium",
+          "faz": "Os apps clássicos de finanças pessoais: categorias, metas, gráficos e sincronização de cartão.",
+          "falta": "Toda entrada é formulário, exatamente a fricção que faz a pessoa parar de usar."
+        }
+      ]
+    },
+    "comparacao": {
+      "eyebrow": "Mercado",
+      "title": "Onde o Self OS se encaixa",
+      "produtos": {
+        "selfos": "Self OS",
+        "meuAssessor": "Meu Assessor",
+        "magie": "Magie",
+        "mobills": "Mobills / Organizze"
+      },
+      "criterios": {
+        "conversa": "Registrar conversando (texto e áudio)",
+        "appProprio": "App próprio, sem depender do WhatsApp",
+        "arvore": "Categorias em árvore, moldadas pelo usuário",
+        "auditoria": "Mostra o que a IA fez, os tokens e o custo",
+        "openFinance": "Puxa as transações do banco (Open Finance)",
+        "pagamentos": "Paga e transfere (Pix)",
+        "alemFinanceiro": "Vai além do financeiro (agenda, treinos, família…)",
+        "chavePropria": "Deixa o usuário usar a própria chave de IA e escolher o modelo"
+      },
+      "valores": {
+        "SIM": "tem",
+        "PARCIAL": "parcial ou planejado",
+        "NAO": "não tem"
+      }
+    },
+    "documentacao": {
+      "eyebrow": "Organização",
+      "title": "A documentação no GitHub",
+      "itens": [
+        {
+          "path": "README.md",
+          "body": "O contexto do projeto: o problema, o chat como eixo, as telas, a stack, o modelo de segurança e como rodar."
+        },
+        {
+          "path": "docs/produtos-similares/",
+          "body": "A análise dos sistemas relacionados, com os quadros de comparação."
+        },
+        {
+          "path": "supabase/migrations/",
+          "body": "Uma migration datada por entrega; supabase/schema/ guarda o estado final do banco por assunto."
+        },
+        {
+          "path": "commits/",
+          "body": "Uma pasta por entrega, com o SQL que foi rodado e o resumo do que mudou."
+        },
+        {
+          "path": "PENDENCIAS.md",
+          "body": "O que ficou de fora de propósito, com o passo a passo de como ligar cada item."
+        }
+      ]
+    },
+    "futuro": {
+      "eyebrow": "Visão",
+      "title": "O financeiro é o primeiro módulo, não o produto",
+      "lead": "O Self OS é um sistema operacional da vida pessoal. Os próximos módulos já aparecem no pé da barra lateral, marcados como ideia futura.",
+      "kicker": "Nenhum concorrente encontrado une o financeiro a treinos e alimentação. Os que mais se aproximam param na agenda e nas tarefas."
+    },
+    "fim": {
+      "title": "Obrigado",
+      "lead": "Perguntas?",
+      "demo": "A demonstração é o próprio sistema: esta apresentação é uma rota dele, em /slides."
+    }
   }
 }

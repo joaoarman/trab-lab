@@ -1,6 +1,4 @@
-/* A identidade visual (cores, tipografia, raio, enquadramento do conteúdo) vive
-   toda em ./theme.css — a fonte única do tema. Aqui ficam só as diretivas do
-   Tailwind + base mínima. O import precisa vir antes dos @tailwind. */
+/* O import precisa vir antes dos @tailwind. */
 @import './theme.css';
 
 @tailwind base;
@@ -8,52 +6,21 @@
 @tailwind utilities;
 
 @layer utilities {
-  /**
-   * A altura do que está REALMENTE visível da janela.
-   *
-   * `100vh` mente no celular: no iOS ele é a janela com as barras do navegador
-   * RECOLHIDAS — quer dizer, sempre maior que a área visível enquanto a barra
-   * estiver na tela. Uma tela travada em `100vh` fica alguns centímetros mais
-   * alta do que cabe, e o que estiver no pé dela (aqui, o campo de escrever do
-   * chat) some atrás da barra do Safari.
-   *
-   * `100dvh` é a unidade dinâmica: vale a altura visível AGORA e se ajusta
-   * sozinha, com a barra em cima (Android/Chrome) ou embaixo (iOS/Safari).
-   *
-   * As duas linhas são de propósito: a primeira é o que vale em quem não conhece
-   * `dvh` (iOS < 15.4), a segunda sobrescreve em todo o resto. Não é duplicação
-   * — é fallback, e por isso o Tailwind não dá conta sozinho (duas declarações
-   * da mesma propriedade não cabem em duas classes utilitárias, onde a ordem no
-   * arquivo decidiria qual vence).
-   */
+  /* 100vh mente no celular: é a janela com as barras recolhidas. A primeira
+     linha é o fallback para quem não conhece dvh (iOS < 15.4). */
   .h-viewport {
     height: 100vh;
     height: 100dvh;
   }
 
-  /**
-   * A mesma altura visível, como MÍNIMO em vez de fixa.
-   *
-   * É o que as telas de login e cadastro usam: elas precisam ocupar a tela toda
-   * para o card ficar centralizado verticalmente, mas não podem cortar o
-   * conteúdo se ele passar disso — um celular pequeno em paisagem, ou o teclado
-   * virtual aberto por cima do formulário. Com `height` fixa, o que sobrasse
-   * ficaria inalcançável.
-   */
+  /* A mesma altura visível, como mínimo: o login precisa centralizar o card
+     sem cortar o formulário quando o teclado abre. */
   .min-h-viewport {
     min-height: 100vh;
     min-height: 100dvh;
   }
 
-  /**
-   * Rolagem sem a barra à vista, para réguas que rolam de lado por desenho (ex.:
-   * filtros de categoria que não cabem na largura do celular). Ali a barra não
-   * informa nada — o gesto de arrastar já é natural no toque — e no Windows e no
-   * Linux ela ocuparia uma faixa embaixo do conteúdo, desalinhando a régua.
-   *
-   * Não cabe em classe do Tailwind: são duas sintaxes de fornecedor (a padrão e
-   * o pseudo-elemento do WebKit), e pseudo-elemento não sai por utilitário.
-   */
+  /* Duas sintaxes de fornecedor, e pseudo-elemento não sai por utilitário. */
   .scrollbar-none {
     scrollbar-width: none;
   }
@@ -72,9 +39,7 @@
     height: 100%;
   }
   body {
-    /* As cores do tema precisam valer já no body: modais, menus e toasts são
-       renderizados em portais presos a ele, fora da árvore do shell. Sem isto,
-       eles herdam o preto padrão do navegador e somem no tema escuro. */
+    /* Modais, menus e toasts são portais presos ao body, fora da árvore do shell. */
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
   }

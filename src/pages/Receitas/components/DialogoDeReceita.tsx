@@ -21,39 +21,13 @@ import { paraCampoDeDataHora } from '@/shared/utils/datas'
 import { reaisDeTexto, textoDeValor, VALOR_MAXIMO, VALOR_MINIMO } from '@/shared/utils/dinheiro'
 import { chaveDeErroDeReceita, criarReceita, salvarReceita } from '../supabase'
 
-/** O tamanho da coluna `name` no banco (`income_name_len`). */
 const MAX_DO_NOME = 80
 
-/**
- * Registrar e editar uma receita — uma modal só.
- *
- * São o mesmo formulário porque são os mesmos campos, e separá-los duplicaria a
- * validação, a conversão e o tratamento de erro para ganhar um título diferente.
- *
- * ## Quatro campos, e nenhum a mais
- *
- * De onde veio, quanto foi (com moeda e cotação, em
- * [`EntradaDeValor`](../../../shared/components/EntradaDeValor.tsx)) e quando
- * entrou. Não há seletor de categoria: receita não tem categoria.
- *
- * O formulário é, portanto, **um campo mais curto que o de Gastos**, e isso é o
- * ponto: lançar o salário do mês custa um nome, um número e um toque em salvar.
- *
- * ## A data de registro não aparece aqui
- *
- * A lista mostra "registrada em", mas a modal não: `created_at` é um fato do
- * sistema, não um campo. Exibi-lo desabilitado só ocuparia uma linha para dizer
- * algo que não se pode mudar — e o cliente sequer tem grant de escrita nele. Ao
- * **editar**, um lembrete embaixo do campo de data conta quando o registro
- * entrou, para que quem estiver corrigindo a data de recebimento saiba com o que
- * está comparando.
- */
 export function DialogoDeReceita({
   alvo,
   onFechar,
   onSalvo,
 }: {
-  /** `null` = fechada · `'nova'` = criando · uma receita = editando. */
   alvo: Receita | 'nova' | null
   onFechar: () => void
   onSalvo: () => void
@@ -68,8 +42,6 @@ export function DialogoDeReceita({
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
-  // Recarrega os campos a cada abertura. Sem isto, abrir "nova receita" logo
-  // depois de ter editado o aluguel traria os dados do aluguel no formulário.
   useEffect(() => {
     if (!alvo) return
 
@@ -78,9 +50,6 @@ export function DialogoDeReceita({
     setValor(editando ? textoDeValor(editando.valor) : '')
     setMoeda(editando?.moeda ?? 'BRL')
     setCotacao(editando?.cotacao == null ? '' : String(editando.cotacao))
-    // Uma receita nova nasce com o "agora" já preenchido: o caso comum é
-    // registrar o que acabou de cair, e nesse caso o campo de data não precisa
-    // de nenhum toque. Voltar para a sexta continua sendo um clique.
     setRecebidaEm(paraCampoDeDataHora(editando ? new Date(editando.recebidaEm) : new Date()))
     setErro(null)
   }, [alvo])
@@ -118,9 +87,6 @@ export function DialogoDeReceita({
       }
       onSalvo()
     } catch (falha) {
-      // O erro fica NA MODAL, não num toast: a correção é sempre num campo logo
-      // acima, e mandar a pessoa ler um aviso no canto da tela para voltar e
-      // corrigir aqui seria um desvio à toa.
       setErro(t(chaveDeErroDeReceita(falha)))
     } finally {
       setSalvando(false)
@@ -164,8 +130,6 @@ export function DialogoDeReceita({
 
           <div className="space-y-2">
             <Label htmlFor="receita-data">{t('income.form.receivedAt')}</Label>
-            {/* Nativo. O `color-scheme` do theme.css é o que faz o ícone de
-                calendário vir claro no tema escuro. */}
             <Input
               id="receita-data"
               type="datetime-local"

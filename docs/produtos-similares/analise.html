@@ -1,0 +1,745 @@
+<title>Produtos Similares ao Self OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+  :root {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-display: 'Outfit', var(--font-sans);
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+    --background: 40 30% 98%;
+    --foreground: 24 10% 12%;
+    --card: 0 0% 100%;
+    --muted: 40 16% 95%;
+    --muted-foreground: 25 6% 42%;
+    --border: 38 14% 89%;
+    --primary: 162 84% 27%;
+    --primary-muted: 160 45% 94%;
+    --income: 142 68% 32%;
+    --income-muted: 142 50% 94%;
+    --expense: 8 72% 46%;
+    --expense-muted: 8 78% 96%;
+    --warning: 38 92% 42%;
+    --warning-muted: 44 90% 94%;
+    --shadow: 24 10% 12%;
+    --shadow-alpha: 0.06;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --background: 24 10% 7%;
+      --foreground: 40 20% 96%;
+      --card: 24 9% 11%;
+      --muted: 24 7% 16%;
+      --muted-foreground: 30 6% 64%;
+      --border: 24 7% 19%;
+      --primary: 158 72% 45%;
+      --primary-muted: 160 30% 16%;
+      --income: 142 62% 50%;
+      --income-muted: 142 30% 16%;
+      --expense: 10 84% 62%;
+      --expense-muted: 8 35% 18%;
+      --warning: 41 96% 55%;
+      --warning-muted: 40 40% 17%;
+      --shadow: 0 0% 0%;
+      --shadow-alpha: 0.4;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --background: 24 10% 7%;
+    --foreground: 40 20% 96%;
+    --card: 24 9% 11%;
+    --muted: 24 7% 16%;
+    --muted-foreground: 30 6% 64%;
+    --border: 24 7% 19%;
+    --primary: 158 72% 45%;
+    --primary-muted: 160 30% 16%;
+    --income: 142 62% 50%;
+    --income-muted: 142 30% 16%;
+    --expense: 10 84% 62%;
+    --expense-muted: 8 35% 18%;
+    --warning: 41 96% 55%;
+    --warning-muted: 40 40% 17%;
+    --shadow: 0 0% 0%;
+    --shadow-alpha: 0.4;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 68rem;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 4vw, 3rem) 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .prose { max-width: 40rem; display: flex; flex-direction: column; gap: 1rem; }
+  .prose p { margin: 0; text-wrap: pretty; }
+
+  /* ---------- cabeçalho ---------- */
+  .doc-head { display: flex; flex-direction: column; gap: 1.25rem; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--primary));
+    margin: 0;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.25rem, 6vw, 3.5rem);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .lede { font-size: clamp(1.05rem, 2vw, 1.2rem); color: hsl(var(--muted-foreground)); max-width: 44rem; margin: 0; text-wrap: pretty; }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .meta div { display: flex; flex-direction: column; gap: 0.1rem; padding: 0.4rem 0; }
+  .meta dt {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .meta dd { margin: 0; font-size: 0.9rem; font-weight: 500; }
+
+  /* ---------- seções ---------- */
+  section { display: flex; flex-direction: column; gap: 1.5rem; scroll-margin-top: 2rem; }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 3.2vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+    margin: 0 0 0.35rem;
+  }
+
+  h3 {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.65rem;
+  }
+
+  .product-head { display: flex; flex-direction: column; gap: 0.5rem; }
+  .product-meta {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: hsl(var(--muted-foreground));
+    margin: 0;
+  }
+  .product-meta b { color: hsl(var(--foreground)); font-weight: 500; }
+
+  /* ---------- os três blocos de avaliação ---------- */
+  .avaliacao {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+  }
+  @media (min-width: 56rem) { .avaliacao { grid-template-columns: repeat(3, 1fr); } }
+
+  .bloco {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.875rem;
+    padding: 1.25rem 1.35rem 1.4rem;
+  }
+  .bloco ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+  .bloco li { position: relative; padding-left: 1.4rem; font-size: 0.92rem; line-height: 1.5; text-wrap: pretty; }
+  .bloco li::before {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-family: var(--font-mono);
+    font-weight: 500;
+  }
+  .func li::before { content: '·'; color: hsl(var(--muted-foreground)); font-size: 1.2rem; line-height: 1.15; }
+  .pos li::before { content: '+'; color: hsl(var(--income)); }
+  .neg li::before { content: '\2212'; color: hsl(var(--expense)); }
+
+  .pos h3 { color: hsl(var(--income)); }
+  .neg h3 { color: hsl(var(--expense)); }
+
+  /* ---------- figuras ---------- */
+  figure { margin: 0; display: flex; flex-direction: column; gap: 0.85rem; }
+  figcaption { font-size: 0.85rem; color: hsl(var(--muted-foreground)); text-wrap: pretty; }
+  figcaption b {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: hsl(var(--primary));
+    font-weight: 500;
+    margin-right: 0.6rem;
+  }
+
+  .figuras { display: flex; flex-direction: column; gap: 2.5rem; }
+
+  /* quadro 1: cartões */
+  .cartoes { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+  @media (min-width: 52rem) { .cartoes { grid-template-columns: repeat(3, 1fr); } }
+  .cartao {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.875rem;
+    padding: 1.25rem 1.35rem;
+    box-shadow: 0 1px 2px hsl(var(--shadow) / var(--shadow-alpha));
+  }
+  .cartao h4 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; margin: 0; letter-spacing: -0.015em; }
+  .cartao .onde { font-family: var(--font-mono); font-size: 0.72rem; color: hsl(var(--muted-foreground)); margin: 0; }
+  .cartao .faz { margin: 0; font-size: 0.95rem; line-height: 1.5; text-wrap: pretty; }
+  .cartao .falta {
+    margin: auto 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid hsl(var(--border));
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: hsl(var(--expense));
+    text-wrap: pretty;
+  }
+
+  /* quadro 2: matriz */
+  .matriz-scroll { overflow-x: auto; border-radius: 0.875rem; border: 1px solid hsl(var(--border)); background: hsl(var(--card)); }
+  table { border-collapse: collapse; width: 100%; min-width: 40rem; }
+  thead th {
+    padding: 0.9rem 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    vertical-align: bottom;
+    color: hsl(var(--muted-foreground));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+  thead th.crit { text-align: left; padding-left: 1.25rem; width: 46%; }
+  thead th.self { color: hsl(var(--primary)); }
+  tbody td { padding: 0.7rem 0.5rem; text-align: center; border-bottom: 1px solid hsl(var(--border) / 0.6); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody td.crit { text-align: left; padding-left: 1.25rem; font-size: 0.92rem; line-height: 1.4; text-wrap: pretty; }
+  td.self, th.self { background: hsl(var(--primary-muted) / 0.55); }
+  .ico { width: 1.15rem; height: 1.15rem; display: inline-block; vertical-align: middle; }
+  .sim { color: hsl(var(--income)); }
+  .parcial { color: hsl(var(--warning)); }
+  .nao { color: hsl(var(--muted-foreground) / 0.5); }
+  sup { font-size: 0.7em; color: hsl(var(--warning)); font-weight: 600; }
+
+  .legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.5rem;
+    font-size: 0.82rem;
+    color: hsl(var(--muted-foreground));
+  }
+  .legenda span { display: inline-flex; align-items: center; gap: 0.4rem; }
+
+  .notas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.4rem; font-size: 0.82rem; color: hsl(var(--muted-foreground)); }
+  .notas li { text-wrap: pretty; }
+  .notas b { color: hsl(var(--warning)); font-family: var(--font-mono); font-size: 0.75rem; }
+
+  /* ---------- fecho ---------- */
+  .fecho {
+    background: hsl(var(--primary-muted) / 0.6);
+    border: 1px solid hsl(var(--primary) / 0.22);
+    border-radius: 0.875rem;
+    padding: clamp(1.35rem, 3vw, 2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .fecho p { margin: 0; max-width: 44rem; text-wrap: pretty; }
+  .fecho p:first-of-type { font-family: var(--font-display); font-size: clamp(1.15rem, 2.4vw, 1.4rem); font-weight: 500; line-height: 1.4; letter-spacing: -0.015em; }
+
+  .fontes { font-size: 0.85rem; color: hsl(var(--muted-foreground)); }
+  .fontes ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+  .fontes a { color: hsl(var(--primary)); text-decoration: none; border-bottom: 1px solid hsl(var(--primary) / 0.3); }
+  .fontes a:hover, .fontes a:focus-visible { border-bottom-color: hsl(var(--primary)); }
+  a:focus-visible { outline: 2px solid hsl(var(--primary)); outline-offset: 3px; border-radius: 2px; }
+
+  @media print {
+    :root, :root[data-theme="dark"] {
+      --background: 0 0% 100%;
+      --foreground: 24 10% 12%;
+      --card: 0 0% 100%;
+      --muted: 40 16% 95%;
+      --muted-foreground: 25 6% 38%;
+      --border: 38 14% 84%;
+      --primary: 162 84% 24%;
+      --primary-muted: 160 45% 95%;
+      --income: 142 68% 28%;
+      --expense: 8 72% 42%;
+      --warning: 38 92% 36%;
+      --shadow-alpha: 0;
+      color-scheme: light;
+    }
+    body { font-size: 10.5pt; }
+    .wrap { max-width: none; padding: 0; gap: 1.75rem; }
+    section, figure, .bloco, .cartao, .fecho { break-inside: avoid; }
+    h2 { break-after: avoid; }
+    .matriz-scroll { overflow: visible; }
+    .fontes a { color: inherit; border-bottom: 0; }
+  }
+
+  hr.rule { border: 0; border-top: 1px solid hsl(var(--border)); margin: 0; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+</svg>
+
+<div class="wrap">
+
+  <header class="doc-head">
+    <p class="eyebrow">Laboratório de Desenvolvimento de Software · ADS · IFRS Campus Canoas</p>
+    <h1>Produtos similares</h1>
+    <p class="lede">
+      Análise de três produtos que resolvem, cada um por um caminho diferente, o mesmo problema
+      do Self OS: registrar e entender o próprio dinheiro sem que isso vire trabalho de digitação.
+    </p>
+    <dl class="meta">
+      <div><dt>Produto proposto</dt><dd>Self OS · auxiliar financeiro por conversa</dd></div>
+      <div><dt>Produtos analisados</dt><dd>Meu Assessor · Magie · Mobills e Organizze</dd></div>
+      <div><dt>Data</dt><dd>27 de agosto de 2026</dd></div>
+    </dl>
+  </header>
+
+  <section id="recorte">
+    <div>
+      <p class="section-label">O recorte</p>
+      <h2>Por que estes três</h2>
+    </div>
+    <div class="prose">
+      <p>
+        O Self OS é um auxiliar financeiro pessoal em que o usuário registra e consulta gastos e
+        receitas conversando, por texto ou por áudio, e o sistema organiza os gastos numa hierarquia
+        de categorias que ele mesmo molda. A aposta do produto não está em ter mais relatórios do que
+        os concorrentes: está em cobrar uma frase pelo registro, em vez de um formulário.
+      </p>
+      <p>
+        Quem já ataca esse mesmo problema se divide em duas famílias, e por isso a análise pega as
+        duas. De um lado, os assistentes de IA que vivem no WhatsApp: o <b>Meu Assessor</b>, que trata
+        finanças como um dos assuntos de uma equipe de assessores, e a <b>Magie</b>, que leva a conversa
+        até o extremo de movimentar dinheiro de verdade. Do outro, os aplicativos clássicos de finanças
+        pessoais brasileiros, <b>Mobills</b> e <b>Organizze</b>, analisados juntos porque ocupam a mesma
+        posição de mercado e oferecem essencialmente o mesmo conjunto de funcionalidades.
+      </p>
+      <p>
+        Os dois quadros a seguir resumem a comparação: o primeiro descreve cada produto em uma frase
+        do que ele faz e uma do que lhe falta; o segundo cruza os oito critérios que importam para a
+        decisão de projeto do Self OS. O texto depois deles destrincha produto por produto.
+      </p>
+    </div>
+  </section>
+
+  <section id="quadros" class="figuras">
+
+    <figure>
+      <div class="cartoes">
+        <div class="cartao">
+          <div>
+            <h4>Meu Assessor</h4>
+            <p class="onde">WhatsApp · assinatura</p>
+          </div>
+          <p class="faz">Time de assessores de IA no WhatsApp: finanças, agenda, tarefas e documentos, por texto, áudio ou foto, com Open Finance em mais de 110 bancos.</p>
+          <p class="falta">Vive dentro do WhatsApp e não mostra o que a IA fez nem quanto custou.</p>
+        </div>
+        <div class="cartao">
+          <div>
+            <h4>Magie</h4>
+            <p class="onde">WhatsApp · conta de pagamento</p>
+          </div>
+          <p class="faz">Assistente financeira que de fato movimenta dinheiro: Pix por áudio, texto ou foto, boletos e saldo rendendo 100% do CDI.</p>
+          <p class="falta">É banco conversacional, não controle de gastos: não organiza categoria nem fecha o mês.</p>
+        </div>
+        <div class="cartao">
+          <div>
+            <h4>Mobills · Organizze</h4>
+            <p class="onde">App próprio · freemium</p>
+          </div>
+          <p class="faz">Os apps clássicos de finanças pessoais: categorias, metas, gráficos, relatórios e sincronização bancária via Open Finance.</p>
+          <p class="falta">Toda entrada é formulário, exatamente a fricção que faz a pessoa parar de usar.</p>
+        </div>
+      </div>
+      <figcaption><b>Quadro 1</b> Os três produtos similares, com o que cada um entrega e o que deixa em aberto.</figcaption>
+    </figure>
+
+    <figure>
+      <div class="matriz-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th class="crit">Critério</th>
+              <th class="self">Self OS</th>
+              <th>Meu Assessor</th>
+              <th>Magie</th>
+              <th>Mobills ·<br>Organizze</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="crit">Registrar conversando (texto e áudio)</td>
+              <td class="self"><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg><sup>1</sup></td>
+            </tr>
+            <tr>
+              <td class="crit">App próprio, sem depender do WhatsApp</td>
+              <td class="self"><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg><sup>2</sup></td>
+              <td><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+            </tr>
+            <tr>
+              <td class="crit">Categorias em árvore, moldadas pelo usuário</td>
+              <td class="self"><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg></td>
+            </tr>
+            <tr>
+              <td class="crit">Mostra o que a IA fez, os tokens e o custo</td>
+              <td class="self"><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+            </tr>
+            <tr>
+              <td class="crit">Puxa as transações do banco (Open Finance)</td>
+              <td class="self"><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg></td>
+              <td><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg><sup>3</sup></td>
+            </tr>
+            <tr>
+              <td class="crit">Paga e transfere (Pix)</td>
+              <td class="self"><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico sim" role="img" aria-label="tem"><use href="#i-check"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+            </tr>
+            <tr>
+              <td class="crit">Vai além do financeiro (agenda, treinos, família…)</td>
+              <td class="self"><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg></td>
+              <td><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+            </tr>
+            <tr>
+              <td class="crit">Deixa o usuário usar a própria chave de IA e escolher o modelo</td>
+              <td class="self"><svg class="ico parcial" role="img" aria-label="parcial ou planejado"><use href="#i-minus"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+              <td><svg class="ico nao" role="img" aria-label="não tem"><use href="#i-x"/></svg></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legenda">
+        <span><svg class="ico sim" aria-hidden="true"><use href="#i-check"/></svg> tem</span>
+        <span><svg class="ico parcial" aria-hidden="true"><use href="#i-minus"/></svg> parcial ou planejado</span>
+        <span><svg class="ico nao" aria-hidden="true"><use href="#i-x"/></svg> não tem</span>
+      </div>
+      <ul class="notas">
+        <li><b>1</b> O Mobills oferece um assistente de IA no WhatsApp, mas apenas no plano PRO, o mais caro da linha, e como canal paralelo ao app.</li>
+        <li><b>2</b> A Magie lançou um aplicativo próprio para complementar o assistente; o núcleo do produto continua sendo a conversa no WhatsApp.</li>
+        <li><b>3</b> A conexão bancária dos dois apps existe e funciona bem, mas fica atrás do plano pago.</li>
+      </ul>
+      <figcaption><b>Quadro 2</b> Matriz de comparação nos oito critérios que orientaram o projeto do Self OS.</figcaption>
+    </figure>
+
+  </section>
+
+  <hr class="rule">
+
+  <section id="meu-assessor">
+    <div class="product-head">
+      <p class="section-label">Produto similar 1</p>
+      <h2>Meu Assessor</h2>
+      <p class="product-meta"><b>Canal:</b> WhatsApp &nbsp;·&nbsp; <b>Modelo:</b> assinatura mensal &nbsp;·&nbsp; <b>Foco:</b> assistente pessoal com finanças dentro</p>
+    </div>
+    <div class="prose">
+      <p>
+        O Meu Assessor vende algo maior do que um controle de gastos: uma equipe de assessores de
+        inteligência artificial que atende pelo WhatsApp. O produto personifica cada frente em um
+        assistente com nome próprio, um coordenando a operação e os demais cuidando de finanças,
+        agenda e documentos, e o usuário fala com todos no mesmo fio de conversa. A entrada é
+        multimodal por princípio: texto, áudio e foto valem igualmente, então mandar a foto de um
+        comprovante é tão válido quanto descrever a compra.
+      </p>
+      <p>
+        Na parte financeira, o diferencial mais forte é a conexão via Open Finance com mais de cento
+        e dez instituições, o que faz saldos, extratos e faturas de cartão aparecerem sozinhos, sem
+        ninguém digitar nada. É a resposta mais radical possível ao problema da fricção: em vez de
+        facilitar o registro, elimina o registro. O produto se posiciona explicitamente sobre
+        segurança e conformidade com a LGPD, o que é coerente com quem pede autorização bancária.
+      </p>
+      <p>
+        Para o Self OS, é o concorrente conceitualmente mais próximo, porque também parte da ideia de
+        que um assistente conversacional pode organizar a vida pessoal inteira e não só o dinheiro. A
+        diferença de projeto está em onde o produto mora e no quanto ele se deixa auditar.
+      </p>
+    </div>
+    <div class="avaliacao">
+      <div class="bloco func">
+        <h3>Funcionalidades</h3>
+        <ul>
+          <li>Conversa por texto, áudio e foto no WhatsApp</li>
+          <li>Assessores especializados em finanças, agenda, tarefas, projetos e documentos</li>
+          <li>Conexão Open Finance com mais de 110 bancos</li>
+          <li>Visão unificada de saldo, extrato e cartões em tempo real</li>
+          <li>Cobranças, lembretes e organização de arquivos</li>
+          <li>Assinatura mensal, sem instalação de aplicativo</li>
+        </ul>
+      </div>
+      <div class="bloco pos">
+        <h3>Pontos positivos</h3>
+        <ul>
+          <li>Adoção quase sem barreira: o canal já está instalado e é usado o dia inteiro</li>
+          <li>Multimodalidade real, com foto e áudio no mesmo nível do texto</li>
+          <li>Open Finance elimina a digitação em vez de apenas reduzi-la</li>
+          <li>Escopo além do financeiro, o que aumenta a frequência de uso</li>
+          <li>Discurso claro de segurança e LGPD, que é o ponto sensível de quem conecta banco</li>
+        </ul>
+      </div>
+      <div class="bloco neg">
+        <h3>Pontos negativos</h3>
+        <ul>
+          <li>Não existe fora do WhatsApp: o histórico financeiro se mistura à conversa pessoal e depende das regras de uma plataforma de terceiros</li>
+          <li>Sem telas próprias, revisar o mês no computador é desconfortável, e conferir o mês é justamente o momento em que a lista importa</li>
+          <li>A IA é caixa-preta: não há registro do que ela executou, de qual modelo respondeu nem de quanto custou</li>
+          <li>A categorização não é uma árvore moldada pelo usuário</li>
+          <li>Assinatura recorrente para um serviço que, sem app, é difícil de levar embora</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section id="magie">
+    <div class="product-head">
+      <p class="section-label">Produto similar 2</p>
+      <h2>Magie</h2>
+      <p class="product-meta"><b>Canal:</b> WhatsApp &nbsp;·&nbsp; <b>Modelo:</b> conta de pagamento &nbsp;·&nbsp; <b>Foco:</b> movimentar dinheiro por conversa</p>
+    </div>
+    <div class="prose">
+      <p>
+        A Magie nasceu em 2024 e leva a conversa ao limite: em vez de anotar o que já aconteceu, ela
+        executa a transação. O usuário manda um áudio, uma mensagem ou a foto de um boleto e a
+        assistente faz o Pix, paga a conta, agenda o pagamento ou cria o lembrete, tudo dentro do
+        WhatsApp. O saldo parado rende 100% do CDI automaticamente. A tração é significativa para um
+        produto tão novo: mais de quatrocentos mil usuários e mais de dois bilhões de reais
+        transacionados, com uma rodada de cinco milhões de dólares e a abertura de uma vertical B2B.
+      </p>
+      <p>
+        Vale registrar a estrutura por trás, porque ela é um risco relevante numa análise de produto
+        financeiro: a Magie não é uma instituição de pagamento autorizada pelo Banco Central e opera
+        por meio de parceiros regulados, uma provedora de banking as a service e uma iniciadora de
+        pagamentos do Open Finance. Funciona, mas coloca o dinheiro do usuário a uma camada de
+        distância da empresa com quem ele acha que está falando.
+      </p>
+      <p>
+        Para o Self OS, a Magie serve como o contraexemplo mais útil da análise. Ela prova que a
+        interface conversacional aguenta a operação mais delicada que existe, transferir dinheiro, e
+        ao mesmo tempo mostra que resolver o pagamento não é o mesmo que resolver o controle. Depois
+        de um mês inteiro de Pix pela Magie, o usuário sabe quanto saiu, mas continua sem saber em
+        quê gastou.
+      </p>
+    </div>
+    <div class="avaliacao">
+      <div class="bloco func">
+        <h3>Funcionalidades</h3>
+        <ul>
+          <li>Pix por áudio, texto ou foto, sem sair do WhatsApp</li>
+          <li>Leitura, agendamento e pagamento de boletos</li>
+          <li>Conta com saldo rendendo 100% do CDI</li>
+          <li>Lembretes financeiros e consulta de saldo</li>
+          <li>Conta PJ e aplicativo próprio como complementos</li>
+          <li>Open Finance por meio de iniciadora parceira</li>
+        </ul>
+      </div>
+      <div class="bloco pos">
+        <h3>Pontos positivos</h3>
+        <ul>
+          <li>A menor fricção possível: o registro e o pagamento acontecem no mesmo gesto</li>
+          <li>Entrada por foto resolve o boleto, que é onde o formulário mais incomoda</li>
+          <li>Rendimento automático sem o usuário precisar fazer nada</li>
+          <li>Escala já comprovada em volume transacionado e base de usuários</li>
+        </ul>
+      </div>
+      <div class="bloco neg">
+        <h3>Pontos negativos</h3>
+        <ul>
+          <li>É um banco conversacional, não um controle de gastos: não há hierarquia de categorias nem fechamento de mês</li>
+          <li>Só enxerga o dinheiro que passa por ela; o gasto no cartão de outro banco fica de fora</li>
+          <li>Nenhuma auditoria do que a IA fez, o que é grave justamente porque as ações movem dinheiro</li>
+          <li>Opera sem licença própria, apoiada em parceiros regulados</li>
+          <li>O núcleo do produto continua preso ao WhatsApp, com o app em papel secundário</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section id="mobills">
+    <div class="product-head">
+      <p class="section-label">Produto similar 3</p>
+      <h2>Mobills e Organizze</h2>
+      <p class="product-meta"><b>Canal:</b> app próprio e web &nbsp;·&nbsp; <b>Modelo:</b> freemium &nbsp;·&nbsp; <b>Foco:</b> controle financeiro completo por formulário</p>
+    </div>
+    <div class="prose">
+      <p>
+        Mobills e Organizze são os dois aplicativos de finanças pessoais mais conhecidos do Brasil e
+        entram nesta análise como um bloco, porque ocupam a mesma posição de mercado e oferecem
+        praticamente o mesmo conjunto de funcionalidades. São produtos maduros, o Mobills passa de
+        dez milhões de usuários, com aplicativo para Android e iOS, acesso pelo navegador e um plano
+        gratuito que já resolve o básico.
+      </p>
+      <p>
+        A profundidade funcional é o ponto forte e nenhum assistente de WhatsApp chega perto: gestão
+        de cartão de crédito com fatura, metas financeiras, orçamento por categoria, gráficos e
+        relatórios de fluxo de caixa mensal e anual, filtros por conta, categoria e etiqueta, anexo
+        de recibos, alertas de vencimento, uso offline com sincronização em nuvem e exportação em
+        Excel, OFX e PDF. Nos planos pagos entra a conexão bancária via Open Finance, que importa os
+        lançamentos com um clique, e o Mobills chegou a acoplar um assistente de IA no WhatsApp ao
+        seu plano mais caro, o que mostra que a própria categoria já reconhece o problema.
+      </p>
+      <p>
+        O que os define, porém, é o caminho de entrada. Fora da importação bancária, cadastrar um
+        gasto significa abrir o app, achar a tela, escolher a conta, escolher a categoria, digitar o
+        valor e confirmar. É uma sequência curta em si mesma, e é exatamente a fricção que faz a
+        pessoa desistir depois de uma semana, deixando o extrato do mês incompleto e, portanto, sem
+        serventia. O Self OS existe por causa desse abandono.
+      </p>
+    </div>
+    <div class="avaliacao">
+      <div class="bloco func">
+        <h3>Funcionalidades</h3>
+        <ul>
+          <li>Lançamento manual de receitas e despesas por formulário</li>
+          <li>Categorias, etiquetas e orçamento por categoria</li>
+          <li>Gestão de cartão de crédito e fatura</li>
+          <li>Metas financeiras e alertas de vencimento</li>
+          <li>Gráficos e relatórios de fluxo de caixa mensal e anual</li>
+          <li>Conexão bancária via Open Finance nos planos pagos</li>
+          <li>App Android e iOS, acesso web, uso offline com sincronização</li>
+          <li>Anexo de recibos e exportação em Excel, OFX e PDF</li>
+        </ul>
+      </div>
+      <div class="bloco pos">
+        <h3>Pontos positivos</h3>
+        <ul>
+          <li>Maturidade e amplitude funcional muito acima das alternativas conversacionais</li>
+          <li>Telas próprias e boas para o momento de revisar e fechar o mês</li>
+          <li>Funcionam offline e sincronizam depois</li>
+          <li>Exportação aberta, então o usuário consegue levar os próprios dados embora</li>
+          <li>Plano gratuito utilizável, o que reduz a barreira de experimentação</li>
+        </ul>
+      </div>
+      <div class="bloco neg">
+        <h3>Pontos negativos</h3>
+        <ul>
+          <li>Toda entrada manual é formulário, e é aí que o uso morre</li>
+          <li>As categorias são listas rasas ou de dois níveis, sem uma árvore que o usuário molde</li>
+          <li>O que remove a digitação, a conexão bancária, está atrás do paywall</li>
+          <li>A IA, quando existe, é um adendo do plano mais caro e ainda vive no WhatsApp</li>
+          <li>Nenhuma transparência sobre o que a automação fez em nome do usuário</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <section id="conclusao">
+    <div>
+      <p class="section-label">Conclusão</p>
+      <h2>Onde o Self OS se encaixa</h2>
+    </div>
+    <div class="fecho">
+      <p>
+        Nenhum dos três junta as três coisas ao mesmo tempo: registro por conversa, aplicativo próprio
+        para revisar o mês e transparência sobre o que a IA fez.
+      </p>
+      <p>
+        Os assistentes de WhatsApp acertam a entrada e erram a revisão, porque uma conversa não é
+        lugar de conferir um extrato, e nenhum deles presta contas do que executou. Os apps clássicos
+        acertam a revisão e erram a entrada, porque exigem exatamente o formulário que faz a pessoa
+        parar de usar. O Self OS ocupa o vão entre os dois: a conversa como caminho principal de
+        registro, telas próprias de gastos, receitas, fatura e categorias para conferir o resultado, e
+        uma árvore de categorias que o usuário molda no lugar de uma lista fixa.
+      </p>
+      <p>
+        A diferença que nenhum concorrente apresenta é o log da IA. Toda mensagem processada fica
+        registrada com o modelo usado, os tokens consumidos, o custo e as ferramentas que rodaram, e o
+        cartão de confirmação só aparece depois que a escrita no banco voltou com sucesso. Nos três
+        produtos analisados, o usuário precisa acreditar no que a IA diz ter feito. Aqui ele pode
+        conferir, e é isso que separa uma resposta convincente de um registro correto.
+      </p>
+    </div>
+  </section>
+
+  <section id="fontes" class="fontes">
+    <p class="section-label">Fontes consultadas</p>
+    <ul>
+      <li><a href="https://meuassessor.com/">meuassessor.com</a> — página oficial do Meu Assessor</li>
+      <li><a href="https://magie.com.br/app">magie.com.br</a> — página oficial da Magie</li>
+      <li><a href="https://startups.com.br/negocios/fintech/magie-capta-us-5-milhoes-e-cria-vertical-b2b-para-pagamentos-via-whatsapp/">Startups</a> — Magie capta US$ 5 milhões e cria vertical B2B</li>
+      <li><a href="https://fastcompanybrasil.com/money/como-a-ia-mudou-o-pix-agora-tem-pagamento-por-audio-no-whatsapp/">Fast Company Brasil</a> — pagamento por áudio no WhatsApp</li>
+      <li><a href="https://www.mobills.com.br/pricing/">mobills.com.br/pricing</a> — planos Premium e PRO do Mobills</li>
+      <li><a href="https://mobills.zendesk.com/hc/pt-br/articles/39727734628251-Tudo-sobre-o-Mobills-PRO">Central de ajuda do Mobills</a> — o que o plano PRO inclui</li>
+      <li><a href="https://www.organizze.com.br/app-de-financas/">organizze.com.br</a> — funcionalidades e conexão bancária</li>
+    </ul>
+  </section>
+
+</div>

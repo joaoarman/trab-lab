@@ -17,23 +17,6 @@ import i18n, { LANGUAGES, setLanguage, type LanguageCode } from '@/shared/i18n'
 
 const ICONES_DE_TEMA: Record<Theme, typeof Sun> = { light: Sun, dark: Moon, system: Monitor }
 
-/**
- * O enquadramento das telas de login e cadastro.
- *
- * Elas ficam FORA do `AppLayout`: sem sidebar, sem barra de abas, sem header —
- * quem não entrou ainda não tem o que navegar, e a navegação ali só ofereceria
- * caminhos que a guarda de rota devolveria ao login.
- *
- * Por isso os controles de **tema e idioma** aparecem aqui: eles moram no menu do
- * usuário, que é parte do shell. Sem esta cópia, quem prefere o app em inglês
- * teria que se cadastrar em português — e quem usa o tema escuro levaria um
- * clarão na primeira tela do sistema.
- *
- * A altura é `min-h-viewport` (`100dvh`) e não `min-h-screen`: `100vh` mente no
- * celular enquanto a barra do navegador está na tela, e o card centralizado
- * ficaria com o miolo deslocado para baixo. É MÍNIMO, e não fixo, para o
- * formulário não ficar inalcançável quando o teclado virtual sobe por cima dele.
- */
 export function AuthShell({
   titulo,
   descricao,
@@ -98,8 +81,6 @@ export function AuthShell({
         </DropdownMenu>
       </div>
 
-      {/* `flex-1` + centro: o card fica no meio da altura sobrando, e no celular
-          simplesmente encosta no topo em vez de exigir rolagem. */}
       <div className="flex flex-1 items-center justify-center px-content pb-10">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex justify-center">
@@ -120,13 +101,6 @@ export function AuthShell({
   )
 }
 
-/**
- * A mensagem de erro do formulário, usada pelo login e pelo cadastro.
- *
- * `role="alert"` faz o leitor de tela anunciar o texto assim que ele aparece —
- * sem isso, quem não vê a tela clicaria em "Entrar" e não receberia notícia
- * nenhuma de que a senha estava errada.
- */
 export function ErroDoFormulario({ mensagem }: { mensagem: string | null }) {
   if (!mensagem) return null
   return (

@@ -1,0 +1,27 @@
+-- =========================================================================
+-- 08 · Fatura, Slides, limpeza do código e seed de demonstração
+-- 27/08/2026
+-- =========================================================================
+--
+-- Sem alterações de banco nesta implementação: nenhuma migration nova, nenhuma
+-- tabela, coluna, policy ou grant mudou. A Fatura LÊ `expense` e `income` com as
+-- policies que já existiam — foi de propósito que ela não precisou de nada novo.
+--
+-- As migrations de `supabase/migrations/` aparecem como alteradas no diff, mas
+-- só perderam comentário: o SQL executável é byte a byte o mesmo, conferido por
+-- um normalizador que compara as duas versões ignorando comentário e espaço.
+-- Nada para rodar de novo — o banco já está nesse estado.
+--
+-- -------------------------------------------------------------------------
+-- SQL OPCIONAL, que NÃO faz parte do schema
+-- -------------------------------------------------------------------------
+--
+-- Esta leva traz `supabase/seeds/demo-perfil-1.sql`: dados de DEMONSTRAÇÃO de um
+-- perfil (57 categorias, ~246 gastos e ~23 receitas dos últimos três meses),
+-- para abrir o sistema com o extrato cheio na apresentação da disciplina.
+--
+-- Não entra aqui nem no `full_schema.sql` porque não é estado do banco: é dado
+-- fictício de um usuário. Recriar o banco não pode trazer o extrato de ninguém
+-- junto. Quem quiser rodar copia o arquivo direto no SQL Editor — e lê antes o
+-- aviso do cabeçalho, porque `v_limpar` vem `true` e APAGA as categorias, os
+-- gastos e as receitas do perfil antes de semear.

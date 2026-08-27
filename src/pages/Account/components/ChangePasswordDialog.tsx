@@ -20,21 +20,6 @@ import { chaveDeErroDeAuth } from '@/shared/lib/authErrors'
 import { conferirSenhaAtual, trocarSenha } from '../supabase'
 import { EscolhaDeSessoes, type EscopoDeSaida } from './EscolhaDeSessoes'
 
-/**
- * Trocar a senha (já logado).
- *
- * **A senha atual é obrigatória.** Sem ela, qualquer pessoa que sentasse num
- * computador com a sessão aberta trocaria a senha sem saber credencial nenhuma —
- * e, com a senha nova na mão, seria dona da conta. É por isso que a validação da
- * senha atual (`conferirSenhaAtual`) vem antes de qualquer coisa: se ela falhar,
- * nada acontece.
- *
- * Isso vale em dobro neste projeto, onde **não existe recuperação de senha**: uma
- * senha trocada por outra pessoa não tem como ser revertida pelo aplicativo.
- *
- * Duas etapas: o formulário e, depois do sucesso, a escolha do que fazer com as
- * outras sessões.
- */
 export function ChangePasswordDialog({
   aberto,
   onFechar,
@@ -56,8 +41,6 @@ export function ChangePasswordDialog({
 
   function fecharELimpar() {
     onFechar()
-    // Um tempinho antes de limpar para o conteúdo não "piscar" de volta ao
-    // primeiro passo enquanto a modal ainda está animando o fechamento.
     setTimeout(() => {
       setEtapa('formulario')
       setAtual('')
@@ -103,9 +86,6 @@ export function ChangePasswordDialog({
     <Dialog
       open={aberto}
       onOpenChange={(estaAberto) => {
-        // Na etapa de sessões não deixamos fechar clicando fora: a senha JÁ
-        // mudou, e sair dali sem escolher deixaria a pessoa achando que a troca
-        // não valeu. Ela precisa ver o "salvo" no fim do caminho.
         if (!estaAberto && etapa === 'formulario' && !processando) fecharELimpar()
       }}
     >

@@ -12,18 +12,6 @@ import { AuthShell, ErroDoFormulario } from './components/AuthShell'
 import { ROTA_DE_CADASTRO } from './components/RotaProtegida'
 import { entrar } from './supabase'
 
-/**
- * Entrar — `/login`.
- *
- * A tela não navega para lugar nenhum quando dá certo: ela só cria a sessão. Quem
- * redireciona é a `RotaPublica` (ver `components/RotaProtegida.tsx`), que reage à
- * mudança de sessão e sabe se a pessoa veio de alguma rota específica.
- *
- * O `isLoading` não é desligado no sucesso, de propósito: entre criar a sessão e
- * a guarda trocar a tela existe um intervalo, e devolver o botão ao normal ali
- * daria a impressão de que nada aconteceu — tempo suficiente para alguém clicar
- * de novo.
- */
 export function LoginPage() {
   const { t } = useTranslation()
   const [email, setEmail] = useState('')

@@ -23,24 +23,6 @@ import { salvarPerfil, type AcaoDeAvatar } from '../supabase'
 
 const SEM_MUDANCA_NO_AVATAR: AcaoDeAvatar = { tipo: 'manter' }
 
-/**
- * O card de Perfil: a foto e o nome.
- *
- * ## Sempre editável, com um "Salvar" só
- *
- * Não há "modo de edição" nem botão "Editar dados": os campos estão sempre
- * habilitados. Um modo de edição cobra um clique antes de qualquer mudança e não
- * protege de nada — o que protege é o "Salvar" existir.
- *
- * O "Salvar" fica visível o tempo todo (para o lugar dele não pular) e só
- * habilita quando há de fato o que salvar. Enquanto houver, o aviso âmbar
- * aparece: sem ele, sair da tela com uma foto recortada e não salva seria uma
- * perda silenciosa.
- *
- * **A foto entra no mesmo "Salvar" que o nome.** É a razão de o `AvatarField`
- * ser controlado daqui: se a foto subisse sozinha ao ser escolhida, esta tela
- * teria duas regras diferentes na mesma linha.
- */
 export function ProfileCard({ perfil }: { perfil: Perfil }) {
   const { t } = useTranslation()
   const { recarregarPerfil } = useAuth()
@@ -63,9 +45,6 @@ export function ProfileCard({ perfil }: { perfil: Perfil }) {
     setSalvando(true)
     try {
       await salvarPerfil(perfil, nome, avatar)
-      // Recarrega antes de limpar o estado local: é o `updated_at` novo que
-      // muda o `?v=` da URL da foto — sem ele, o navegador seguiria mostrando a
-      // imagem antiga, já que o caminho no bucket é sempre o mesmo.
       await recarregarPerfil()
       setAvatar(SEM_MUDANCA_NO_AVATAR)
       toast.success(t('account.profile.saved'))

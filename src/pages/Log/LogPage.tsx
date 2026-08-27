@@ -12,42 +12,8 @@ import { consumoDoPeriodo, listarMensagens, TAMANHO_DA_PAGINA } from './supabase
 import { DiaDoLog, LinhaDoLog } from './components/LinhaDoLog'
 import { TotaisDeConsumo } from './components/TotaisDeConsumo'
 
-/** O recorte com que a tela abre: o mês corrente — ver `shared/utils/datas.ts`. */
 const ATALHO_INICIAL: Atalho = 'esteMes'
 
-/**
- * Log da IA — `/ai-log`.
- *
- * É o que torna a parte de IA deste sistema **auditável**. Sem ele, o Chat seria
- * uma caixa-preta que gasta dinheiro: dá para ver o que a IA respondeu, mas não o
- * que ela chamou por baixo nem quanto aquilo custou.
- *
- * ## As duas perguntas, na ordem em que se fazem
- *
- * 1. **"quanto isso custou?"** — os totais, no topo. É o que traz a pessoa aqui;
- * 2. **"o que a IA fez com a minha mensagem?"** — a lista, abaixo, com o texto de
- *    cada mensagem e, dobrado, as ferramentas que rodaram com os argumentos crus.
- *
- * ## Por que a lista mostra o que o usuário LIMPOU da conversa
- *
- * "Limpar conversa", no Chat, é `is_active = false` — nunca delete. As mensagens
- * somem de lá e continuam aqui, marcadas. É o desenho do módulo: se limpar a
- * conversa apagasse as linhas, a única prestação de contas de quanto a IA custou
- * iria junto, e quem mais usa o chat teria o consumo subdeclarado justamente por
- * organizar a tela.
- *
- * ## Esta tela é só leitura, e por dentro também
- *
- * Não há botão de editar nem de apagar, e não é por falta de tela: **não existe
- * grant** de escrita em `public.ai_log` para o cliente. Um log que a pessoa
- * auditada consegue mexer não audita nada.
- *
- * ## Os totais não saem da lista
- *
- * A lista é paginada; o rodapé de totais vem de uma RPC que soma no banco (ver
- * `./supabase.ts`). Somar a página visível daria um número menor que a verdade,
- * com cara de resposta certa — o defeito que uma tela de auditoria menos pode ter.
- */
 export function LogPage() {
   const { t } = useTranslation()
 
@@ -61,13 +27,6 @@ export function LogPage() {
   const [periodo, setPeriodo] = useState<PeriodoEscolhido>(ATALHO_INICIAL)
   const [recorte, setRecorte] = useState<RecorteDePeriodo>(() => periodoDe(ATALHO_INICIAL))
 
-  /**
-   * A lista e os totais são buscados JUNTOS, e sempre os dois.
-   *
-   * Eles respondem sobre o mesmo recorte, e deixar um deles para trás numa troca
-   * de filtro mostraria o custo de agosto sobre a lista de julho — o pior erro
-   * possível numa tela cuja função é conferir números.
-   */
   const recarregar = useCallback(async () => {
     setErro(false)
     setCarregando(true)
@@ -78,8 +37,6 @@ export function LogPage() {
       ])
       setMensagens(pagina)
       setConsumo(totais)
-      // Página cheia = provavelmente há mais. Uma página incompleta encerra o
-      // assunto sem uma segunda consulta.
       setTemMais(pagina.length === TAMANHO_DA_PAGINA)
     } catch {
       setErro(true)
@@ -108,16 +65,6 @@ export function LogPage() {
     }
   }
 
-  /**
-   * As mensagens fatiadas por dia, **no fuso de quem está olhando**.
-   *
-   * A lista já vem ordenada do banco (mais recente primeiro), então o dia corrente
-   * é sempre o último grupo criado: basta olhar o fim, sem Map nem reordenação.
-   *
-   * Não usa `agruparPorDia` de `shared/data/extrato.ts` porque aquela função existe
-   * para somar o dia — ela pede um acessor de valor, e aqui não há total por dia:
-   * o custo se lê no período inteiro, no topo, e por mensagem, na linha.
-   */
   const dias = useMemo(() => {
     const grupos: { data: string; mensagens: MensagemDaIA[] }[] = []
 
@@ -132,8 +79,6 @@ export function LogPage() {
   }, [mensagens])
 
   return (
-    // Sem título aqui: quem escreve "Log da IA" no topo é o header, a partir de
-    // `navigation.ts`. Repeti-lo daria dois <h1> na mesma tela.
     <div className="space-y-6">
       {erro && (
         <Alert variant="destructive" className="justify-between">
@@ -149,9 +94,6 @@ export function LogPage() {
 
       <Card>
         <CardContent className="p-4">
-          {/* O MESMO filtro de Gastos e Receitas: as três telas fazem a mesma
-              pergunta ("de quando até quando?"), e um controle diferente em cada
-              uma faria o usuário reaprender o recorte a cada tela. */}
           <div className="grid gap-4 sm:grid-cols-3">
             <FiltroDePeriodo
               recorte={recorte}
@@ -206,13 +148,6 @@ export function LogPage() {
   )
 }
 
-/**
- * O estado vazio.
- *
- * Não oferece ação nenhuma, e é de propósito: nada se cria a partir daqui. O que
- * ele faz é dizer **onde** o log nasce — na conversa —, porque um "nenhum registro
- * neste período" sozinho deixaria a pessoa achando que a tela está quebrada.
- */
 function EstadoVazio() {
   const { t } = useTranslation()
 

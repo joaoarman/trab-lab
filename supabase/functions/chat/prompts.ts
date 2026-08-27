@@ -1,100 +1,27 @@
-// =============================================================================
-// O CÉREBRO DA CONVERSA — modelos, preços e o system prompt.
-//
-// Este arquivo é a fonte única do que a IA "é" no Self OS. Tudo o que define o
-// comportamento dela mora aqui, e nada disso se repete em outro lugar:
-//
-//   • quais MODELOS são usados (conversa e transcrição) e o que eles custam;
-//   • o BASE PROMPT — quem ela é, o que pode, o que não pode e como responde;
-//   • a montagem do system prompt de cada mensagem, com o contexto do usuário
-//     (nome, data de hoje, a árvore de categorias dele);
-//   • a trava do falso sucesso, que impede a IA de dizer "gasto salvo" sem ter
-//     salvado nada.
-//
-// ⚠️ A Edge Function `transcribe` IMPORTA daqui (MODELO_TRANSCRICAO,
-// PROMPT_TRANSCRICAO e custoDaTranscricaoEmCentavos). Renomear ou mover a pasta
-// `chat/` quebra o deploy dela. É de propósito: a alternativa seria uma cópia da
-// tabela de preços do outro lado, e duas cópias divergem no dia em que alguém
-// corrigir uma só.
-// =============================================================================
-
-// -----------------------------------------------------------------------------
-// 1. MODELOS E LIMITES
-// -----------------------------------------------------------------------------
-
-/**
- * O modelo da conversa — quem decide qual ferramenta chamar.
- *
- * `gpt-4.1-mini` porque a tarefa aqui não é escrever bonito, é **ler uma frase e
- * escolher uma função com os argumentos certos**. Nisso ele empata com o modelo
- * cheio e custa um quinto. Trocar é editar esta linha (e conferir se o novo
- * modelo está em `PRECOS_DE_CONVERSA`, senão o custo passa a ser gravado como
- * null — "não sei", nunca zero).
- */
 export const MODELO_CHAT = 'gpt-4.1-mini'
 
-/** O modelo que transcreve o áudio. Usado pela Edge Function `transcribe`. */
 export const MODELO_TRANSCRICAO = 'gpt-4o-transcribe'
 
-/**
- * Quantas mensagens da conversa voltam como contexto.
- *
- * É o que dá memória curta à IA ("e o de ontem?", "muda para 45"). Não é maior
- * porque cada mensagem a mais é token pago em TODA chamada seguinte — e uma
- * conversa de registrar gasto raramente depende do que se disse trinta mensagens
- * atrás.
- */
 export const MAX_MENSAGENS_DE_CONTEXTO = 30
 
-/**
- * Quantas idas ao modelo um turno pode ter.
- *
- * Um turno normal tem duas (pedir → chamar a ferramenta → responder). O teto
- * existe para o caso patológico: um modelo que erra o argumento, recebe o erro,
- * corrige, erra de novo — e fica nesse laço gastando dinheiro do usuário. Na
- * última rodada as ferramentas saem da mesa, o que **obriga** o modelo a fechar
- * com texto.
- */
 export const MAX_RODADAS_DE_FERRAMENTA = 8
 
-/**
- * Temperatura baixa de propósito. Aqui não se quer criatividade: "gastei 20 no
- * posto" tem uma leitura certa, e variar a interpretação da mesma frase entre uma
- * chamada e outra é defeito, não estilo.
- */
 export const TEMPERATURA = 0.2
 
 export const MAX_TOKENS_DE_RESPOSTA = 1000
 
-/** O teto de uma mensagem, dos dois lados. Bate com o check de `ai_log.content`. */
 export const MAX_CARACTERES = 8000
-
-// -----------------------------------------------------------------------------
-// 2. PREÇOS — em dólar por 1 milhão de tokens
-// -----------------------------------------------------------------------------
-//
-// ⚠️ ESCRITOS À MÃO. Nenhuma API os consulta, então CONFERIR ao trocar de modelo.
-// Fonte: https://platform.openai.com/docs/pricing
-//
-// O modelo que não estiver nesta tabela faz o custo ser gravado como **null**, e
-// null em `ai_log.cost_usd_cents` significa "não sei" — nunca "saiu de graça". É
-// a diferença entre um relatório com um buraco declarado e um relatório que
-// mente.
 
 interface PrecoDeConversa {
   entrada: number
-  /** A parte da entrada que veio do cache de prompt da OpenAI — sai mais barata. */
   entradaCacheada: number
   saida: number
 }
 
 interface PrecoDeTranscricao {
-  /** Token de áudio na entrada. */
   audio?: number
-  /** Token de texto na entrada (o vocabulário que mandamos junto). */
   texto?: number
   saida?: number
-  /** O whisper-1 não cobra por token: cobra por minuto de áudio. */
   porMinuto?: number
 }
 
@@ -127,14 +54,6 @@ export interface UsoDaTranscricao {
 const POR_MILHAO = 1_000_000
 const CENTAVOS_POR_DOLAR = 100
 
-/**
- * O custo do turno inteiro, em CENTAVOS de dólar — fracionário, porque uma
- * chamada custa muito menos de um centavo.
- *
- * A entrada cacheada é DESCONTADA da entrada cheia antes de ser cobrada ao preço
- * dela: o `prompt_tokens` da OpenAI já inclui o que veio do cache, então somar os
- * dois cobraria o mesmo token duas vezes.
- */
 export function custoDaConversaEmCentavos(modelo: string, uso: UsoDaConversa): number | null {
   const preco = PRECOS_DE_CONVERSA[modelo]
   if (!preco) return null
@@ -150,7 +69,6 @@ export function custoDaConversaEmCentavos(modelo: string, uso: UsoDaConversa): n
   return dolares * CENTAVOS_POR_DOLAR
 }
 
-/** O custo de uma transcrição. Os dois jeitos de cobrar: por token e por minuto. */
 export function custoDaTranscricaoEmCentavos(
   modelo: string,
   uso: UsoDaTranscricao,
@@ -173,10 +91,6 @@ export function custoDaTranscricaoEmCentavos(
 
   return dolares * CENTAVOS_POR_DOLAR
 }
-
-// -----------------------------------------------------------------------------
-// 3. BASE PROMPT — quem a IA é neste sistema
-// -----------------------------------------------------------------------------
 
 export const BASE_PROMPT = `
 Você é a assistente do **Self OS**, um auxiliar financeiro pessoal. O usuário
@@ -518,23 +432,6 @@ ninguém.
   sistema.
 `.trim()
 
-// -----------------------------------------------------------------------------
-// 4. A TRAVA DO FALSO SUCESSO
-// -----------------------------------------------------------------------------
-//
-// O pior defeito possível neste sistema não é errar um valor: é o usuário sair da
-// conversa **achando** que registrou. Ele não confere de novo, e semanas depois o
-// mês não fecha — sem nenhuma pista de onde o buraco começou.
-//
-// Um modelo de linguagem cai nisso com facilidade, e por um motivo mecânico: o
-// histórico da conversa está cheio de respostas dele dizendo "registrei", e imitar
-// o padrão da mensagem anterior é exatamente o que ele faz de melhor. O texto sai
-// perfeito; a chamada de ferramenta é que não aconteceu.
-//
-// Então a Edge Function confere o FATO (rodou ferramenta de escrita neste turno?)
-// contra a AFIRMAÇÃO (o texto diz que gravou?) e, quando as duas discordam, manda
-// o modelo consertar antes de o usuário ver qualquer coisa.
-
 const AFIRMACAO_DE_ESCRITA =
   /✅|\b(registrei|registrado|registrada|gravei|salvei|salvo|salva|anotei|lancei|lançado|lançada|atualizei|corrigi|apaguei|excluí|exclui|deletei)\b/i
 
@@ -561,33 +458,6 @@ Escolha uma das duas, agora:
 Não repita a resposta anterior.
 `.trim()
 
-// -----------------------------------------------------------------------------
-// A SEGUNDA TRAVA: a categoria que foi anunciada e não nasceu
-// -----------------------------------------------------------------------------
-//
-// A trava de cima pergunta "rodou alguma escrita?". Ela não pega este caso, e o
-// caso aconteceu de verdade: o modelo registrou o gasto numa categoria ANTIGA
-// (uma escrita rodou, então a trava passou) e escreveu "criei `Casa › Mercado`".
-// Categoria nenhuma foi criada. O usuário fechou a conversa achando que a árvore
-// dele tinha mudado.
-//
-// É o mesmo defeito da outra trava — texto que descreve um fato que não existe —
-// num campo mais estreito, e por isso precisa da própria checagem: o que se
-// compara aqui não é "houve escrita?", é "houve escrita DE CATEGORIA?".
-//
-// Só dispara quando a frase nomeia a criação de uma CATEGORIA. "Registrei" sozinho
-// não conta: registrar um gasto numa gaveta que já existia é o caso mais comum do
-// sistema, e travá-lo transformaria a conversa inteira em rodada dupla.
-
-// "criei" sozinho basta, e a frase que motivou esta trava é a prova: *"Anotei, e
-// criei `Casa › Mercado` para esse tipo de gasto"* não tem a palavra "categoria"
-// em lugar nenhum. Exigir as duas palavras juntas deixaria passar exatamente o
-// caso real.
-//
-// O verbo é seguro sozinho porque **categoria é a única coisa que esta IA cria**:
-// gasto ela "registra", receita ela "lança". A negação sai fora — "não criei
-// categoria nenhuma" é a resposta honesta, e travá-la custaria uma rodada para
-// depois liberar a mesma frase.
 const AFIRMACAO_DE_CATEGORIA_CRIADA =
   /(?<!não\s)(?<!nao\s)\bcriei\b|\b(criada|criado|nova|novas?)\b[^.!?\n]{0,40}\bcategorias?\b|\bcategorias?\b[^.!?\n]{0,40}\b(criada|criado|nova)\b/i
 
@@ -612,23 +482,11 @@ sua intenção era criar — ou mandou os dois campos. Escolha uma das duas, ago
 Não repita a resposta anterior.
 `.trim()
 
-/** O que o usuário lê quando nem o aviso acima resolveu. Honesto, e sem ✅. */
 export const RESPOSTA_SEM_ESCRITA: Record<Idioma, string> = {
   'pt-BR':
     'Não consegui gravar isso agora — **nada foi salvo**. Pode mandar de novo? Se continuar falhando, dá para lançar pela tela de Gastos ou de Receitas.',
   en: "I couldn't save that just now — **nothing was recorded**. Mind sending it again? If it keeps failing, you can add it from the Expenses or Income screen.",
 }
-
-// -----------------------------------------------------------------------------
-// 5. A MENSAGEM DE ASSUNTO FORA DO SISTEMA
-// -----------------------------------------------------------------------------
-//
-// Escrita AQUI, e não pelo modelo, de propósito. Se a recusa fosse redigida a cada
-// vez, ela sairia diferente toda vez — às vezes explicando as regras, às vezes
-// pedindo desculpas, às vezes comentando o assunto que deveria ter ignorado. Uma
-// frase fixa é a única que não vaza nada e não abre conversa.
-//
-// A tela a desenha em vermelho (`ai_log.kind = 'REFUSAL'`).
 
 export type Idioma = 'pt-BR' | 'en'
 
@@ -638,33 +496,6 @@ export const RESPOSTA_FORA_DO_ESCOPO: Record<Idioma, string> = {
   en: 'I can only help with your expenses, income and categories here in Self OS.',
 }
 
-/** O idioma pedido pela tela, com o padrão do projeto como reserva. */
-/**
- * O texto final É a frase padrão de recusa, mesmo sem a ferramenta ter rodado?
- *
- * ## O caso real que obrigou esta função a existir
- *
- * Três perguntas fora do escopo em sequência. As duas primeiras saíram vermelhas,
- * certinhas. Na TERCEIRA o modelo escreveu a frase padrão **letra por letra** como
- * texto normal, sem chamar `assunto_fora_do_sistema` — e a bolha saiu branca,
- * dizendo exatamente a mesma coisa que as duas vermelhas acima dela.
- *
- * O motivo é mecânico, e é o mesmo do falso sucesso: o histórico que vai ao modelo
- * já continha aquela frase duas vezes, como mensagem dele. Imitar o padrão da
- * mensagem anterior é o que um modelo de linguagem faz de melhor. Ele não decidiu
- * pular a ferramenta; ele completou a sequência.
- *
- * ## Isto não desmonta a regra de que a recusa é uma FERRAMENTA
- *
- * A ferramenta continua sendo o caminho: é ela que faz o sistema decidir, e não o
- * texto. Esta função é uma **rede embaixo dela**, e só pega um caso — o texto ser a
- * frase que o próprio sistema escreveu. Não há resposta legítima que comece assim:
- * a frase é uma constante daqui, não algo que o modelo compõe.
- *
- * A comparação é normalizada (caixa, acento, espaço, pontuação final) porque a
- * imitação costuma sair quase igual, e um acento a menos não pode ser a diferença
- * entre a bolha vermelha e a branca.
- */
 export function ehTextoDeRecusa(resposta: string): boolean {
   const normalizada = normalizar(resposta)
   if (!normalizada) return false
@@ -688,15 +519,6 @@ export function idiomaDe(valor: unknown): Idioma {
   return valor === 'en' ? 'en' : 'pt-BR'
 }
 
-// -----------------------------------------------------------------------------
-// 6. PROMPT_TRANSCRICAO — o vocabulário que o áudio provavelmente traz
-// -----------------------------------------------------------------------------
-//
-// Usado pela Edge Function `transcribe`. Não é enfeite: é o que decide entre
-// "mercado" e "marcado", e entre "cinquenta e dois reais" e "52 reais". Um recado
-// de dez segundos falado no meio da rua é o pior áudio possível, e a lista de
-// palavras esperadas é a única dica que o modelo recebe.
-
 export const PROMPT_TRANSCRICAO = `
 Áudio de uma pessoa registrando gastos e receitas pessoais em português do Brasil.
 Vocabulário provável: gastei, paguei, comprei, custou, recebi, caiu, entrou,
@@ -713,50 +535,22 @@ Números de dinheiro aparecem muito ("vinte e cinco reais", "R$ 108,42", "50 pil
 "nos últimos quinze dias").
 `.trim()
 
-// -----------------------------------------------------------------------------
-// 7. MONTAGEM DO SYSTEM PROMPT
-// -----------------------------------------------------------------------------
-
-/** Uma categoria do usuário, do jeito que o prompt precisa dela. */
 export interface CategoriaDoContexto {
   id: number
-  /** O caminho inteiro, do topo até ela: `['Carro', 'Gasolina']`. */
   caminho: string[]
   ativa: boolean
 }
 
 export interface ContextoDaConversa {
   nome: string
-  /** A data do USUÁRIO (YYYY-MM-DD), não a do servidor — ver o index.ts. */
   hoje: string
-  /** O nome do dia por extenso, no idioma dele. */
   diaDaSemana: string
   idioma: Idioma
   categorias: CategoriaDoContexto[]
 }
 
-/**
- * Quantas categorias cabem no prompt.
- *
- * Uma árvore pessoal tem dezenas, não milhares — o teto é uma rede contra o caso
- * degenerado (alguém que deixou a IA criar categoria sem critério por meses), em
- * que o prompt engordaria e o custo de TODA mensagem subiria junto.
- */
 export const MAX_CATEGORIAS_NO_PROMPT = 200
 
-/**
- * O system prompt desta mensagem: o base prompt + o contexto de quem está falando.
- *
- * A árvore de categorias vai INTEIRA no prompt, com os ids, e é o que permite à IA
- * escolher a gaveta na primeira tentativa — sem uma ida ao banco só para descobrir
- * o que já existe. Ela é pequena por natureza (é a hierarquia de uma pessoa) e
- * cara de descobrir por ferramenta (uma rodada a mais em toda mensagem que
- * registra um gasto).
- *
- * As DESATIVADAS vão junto, marcadas: sem elas, a IA criaria uma "Gasolina" nova
- * ao lado da que está no submenu "Desativadas" — e o banco recusaria, porque o
- * índice único não distingue ativa de inativa.
- */
 export function montarSystemPrompt(ctx: ContextoDaConversa): string {
   const cabecalho = `
 # Contexto desta conversa
@@ -787,10 +581,6 @@ primeiro gasto, com dois degraus no máximo, e siga.
 
   const cortadas = categorias.length - linhas.length
 
-  // Os blocos são juntados com linha em branco entre eles; as linhas em branco
-  // DENTRO de um bloco viriam de um `''` no array, e um filtro genérico de vazios
-  // as comeria junto com o aviso opcional. Por isso o opcional é resolvido antes,
-  // e o join não filtra nada.
   const partes = [
     '# As categorias deste usuário',
     [
@@ -807,8 +597,6 @@ primeiro gasto, com dois degraus no máximo, e siga.
   ]
 
   if (cortadas > 0) {
-    // O aviso entra logo depois da lista, e não no fim: é ali que ele significa
-    // "esta lista está incompleta" em vez de uma observação solta.
     partes.splice(3, 0, `(e mais ${cortadas} que não couberam aqui)`)
   }
 

@@ -20,30 +20,6 @@ import { chaveDeErroDeAuth } from '@/shared/lib/authErrors'
 import { conferirSenhaAtual, emailDisponivel, trocarEmail } from '../supabase'
 import { EscolhaDeSessoes, type EscopoDeSaida } from './EscolhaDeSessoes'
 
-/**
- * Trocar o e-mail de login.
- *
- * ## A senha atual é exigida — e o motivo não é simetria
- *
- * Trocar o e-mail é o caminho mais curto para **tomar uma conta**. Quem sentasse
- * num computador com a sessão aberta poria o próprio endereço aqui e, num sistema
- * com recuperação de senha, receberia o link de redefinição no próprio inbox: a
- * conta muda de dono sem que a senha jamais tenha sido descoberta. Pedir a senha
- * atual fecha isso.
- *
- * ## A ordem: disponibilidade primeiro, senha depois
- *
- * O e-mail é conferido ANTES de olhar a senha. Assim, se o endereço já é de outra
- * conta, a pessoa descobre isso de imediato — e não depois de errar a senha e
- * ficar sem saber qual dos dois campos era o problema.
- *
- * ## Sem código de confirmação
- *
- * A confirmação de e-mail está desligada neste projeto, então a troca vale na
- * hora: não há código para digitar nem endereço pendente. O preço — o endereço
- * novo nunca é comprovado — está registrado como risco aceito no
- * `PENDENCIAS.md`.
- */
 export function ChangeEmailDialog({
   aberto,
   onFechar,
@@ -86,8 +62,6 @@ export function ChangeEmailDialog({
       }
       await conferirSenhaAtual(emailAtual, senha)
       await trocarEmail(novoEmail)
-      // O `profile.email` é atualizado pelo trigger do banco, não por aqui —
-      // reler é o que traz a cópia nova para a tela.
       await recarregarPerfil()
       setEtapa('sessoes')
     } catch (falha) {

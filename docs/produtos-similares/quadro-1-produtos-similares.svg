@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-label="Quadro 1 — produtos similares ao Self OS">
+<rect width="1200" height="360" fill="#FCFAF6"/>
+<text x="24" y="30" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="11" font-weight="500" fill="#0B7E5D" letter-spacing="1.6">QUADRO 1</text>
+<text x="116" y="30" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#726B66">Produtos similares: o que cada um entrega e o que deixa em aberto</text>
+<rect x="24" y="64" width="368" height="272" rx="14" fill="#FFFFFF" stroke="#E8E3DA"/>
+<text x="46" y="104" font-family="Outfit, Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="21" font-weight="600" fill="#211E1B">Meu Assessor</text>
+<text x="46" y="126" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#726B66">WhatsApp · assinatura</text>
+<text x="46" y="156" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Time de assessores de IA no WhatsApp:</text>
+<text x="46" y="177" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">finanças, agenda, tarefas e documentos, por</text>
+<text x="46" y="198" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">texto, áudio ou foto, com Open Finance em</text>
+<text x="46" y="219" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">mais de 110 bancos.</text>
+<line x1="46" y1="256" x2="370" y2="256" stroke="#E8E3DA"/>
+<text x="46" y="290" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#C93B22">Vive dentro do WhatsApp e não mostra o que</text>
+<text x="46" y="310" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#C93B22">a IA fez nem quanto custou.</text>
+<rect x="416" y="64" width="368" height="272" rx="14" fill="#FFFFFF" stroke="#E8E3DA"/>
+<text x="438" y="104" font-family="Outfit, Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="21" font-weight="600" fill="#211E1B">Magie</text>
+<text x="438" y="126" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#726B66">WhatsApp · conta de pagamento</text>
+<text x="438" y="156" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Assistente financeira que de fato movimenta</text>
+<text x="438" y="177" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">dinheiro: Pix por áudio, texto ou foto,</text>
+<text x="438" y="198" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">boletos e saldo rendendo 100% do CDI.</text>
+<line x1="438" y1="236" x2="762" y2="236" stroke="#E8E3DA"/>
+<text x="438" y="270" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#C93B22">É banco conversacional, não controle de</text>
+<text x="438" y="290" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#C93B22">gastos: não organiza categoria nem fecha</text>
+<text x="438" y="310" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#C93B22">o mês.</text>
+<rect x="808" y="64" width="368" height="272" rx="14" fill="#FFFFFF" stroke="#E8E3DA"/>
+<text x="830" y="104" font-family="Outfit, Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="21" font-weight="600" fill="#211E1B">Mobills · Organizze</text>
+<text x="830" y="126" font-family="'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace" font-size="11.5" font-weight="400" fill="#726B66">App próprio · freemium</text>
+<text x="830" y="156" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">Os apps clássicos de finanças pessoais:</text>
+<text x="830" y="177" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">categorias, metas, gráficos, relatórios e</text>
+<text x="830" y="198" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#211E1B">sincronização bancária via Open Finance.</text>
+<line x1="830" y1="256" x2="1154" y2="256" stroke="#E8E3DA"/>
+<text x="830" y="290" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#C93B22">Toda entrada é formulário, exatamente a</text>
+<text x="830" y="310" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="14.5" font-weight="400" fill="#C93B22">fricção que faz a pessoa parar de usar.</text>
+</svg>

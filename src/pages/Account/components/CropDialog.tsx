@@ -14,32 +14,12 @@ import {
 } from '@/shared/components/ui/dialog'
 import { cropToSquareJpeg } from '@/shared/utils/image'
 
-/**
- * O recorte da foto de perfil.
- *
- * ## Por que recortar é obrigatório, e não "opcional"
- *
- * O avatar é sempre desenhado num círculo. Uma foto na horizontal, jogada
- * direto nele, é cortada pelo navegador **pelo centro geométrico** — que quase
- * nunca é onde está o rosto. Deixar a pessoa escolher o enquadramento é a
- * diferença entre uma foto de perfil e um pedaço de ombro.
- *
- * O recorte também padroniza o arquivo: sai sempre um JPEG quadrado de 512px,
- * de dezenas de KB, e não os vários megabytes que a câmera de um celular produz
- * — que, aliás, o bucket recusaria (o limite é 2 MB).
- *
- * ## O que este componente NÃO faz
- *
- * Não sobe nada. Devolve o Blob recortado e quem o guarda é a tela de perfil,
- * como uma alteração pendente, até o "Salvar". Ver `AvatarField`.
- */
 export function CropDialog({
   imagem,
   aberto,
   onCancelar,
   onConfirmar,
 }: {
-  /** A imagem escolhida, como object URL. Null quando não há nada para recortar. */
   imagem: string | null
   aberto: boolean
   onCancelar: () => void
@@ -74,9 +54,6 @@ export function CropDialog({
           <DialogDescription>{t('account.avatar.cropDescription')}</DialogDescription>
         </DialogHeader>
 
-        {/* O Cropper se mede pelo elemento posicionado que o contém, então esta
-            altura fixa não é enfeite: sem ela a área de recorte teria zero de
-            altura e a imagem não apareceria. */}
         <div className="relative h-64 w-full overflow-hidden rounded-md bg-muted">
           {imagem && (
             <Cropper
@@ -93,9 +70,6 @@ export function CropDialog({
           )}
         </div>
 
-        {/* Um <input range> nativo: no celular o zoom sai da pinça, mas no
-            desktop nem todo mouse tem roda — sem a barra, quem usa trackpad
-            ficaria sem como aproximar. */}
         <div className="flex items-center gap-3">
           <ZoomOut className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <input

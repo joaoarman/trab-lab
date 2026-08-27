@@ -3,22 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { cn } from '@/shared/lib/utils'
 import { BOTTOM_NAV_ITEMS } from './navigation'
 
-/**
- * A barra de abas do celular — o que se usa todo dia, a um toque.
- *
- * Só aparece abaixo de `lg`; no desktop quem navega é a sidebar. Quem entra aqui
- * é decidido pelo campo `bottomNav` em `navigation.ts`, e o porquê do critério
- * está lá: a barra divide a largura do aparelho, então cada aba a mais encolhe
- * as outras.
- *
- * A altura vem de `--bottom-nav-height` (src/theme.css) — o MESMO token que o
- * `<main>` usa para reservar o espaço embaixo. Dois números escritos à mão
- * divergiriam, e a sobra viraria um vão morto embaixo do campo de escrever do
- * chat, a única tela que encosta na barra.
- *
- * `env(safe-area-inset-bottom)` é a faixa do gesto de voltar do iPhone: sem
- * somá-la, os rótulos ficariam por baixo da barrinha do sistema.
- */
 export function BottomNav() {
   const { t } = useTranslation()
 

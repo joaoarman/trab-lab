@@ -1,5 +1,3 @@
-// Redimensiona uma imagem no navegador e retorna um data URL (base64).
-// Útil para anexos/logos antes de enviar ao Supabase Storage.
 export function fileToScaledDataUrl(
   file: File,
   maxSize = 1100,
@@ -37,7 +35,6 @@ export function fileToScaledDataUrl(
   })
 }
 
-/** A área recortada, em pixels da imagem ORIGINAL. É o que o react-easy-crop entrega. */
 export interface AreaDeRecorte {
   x: number
   y: number
@@ -45,18 +42,6 @@ export interface AreaDeRecorte {
   height: number
 }
 
-/**
- * Recorta um pedaço de uma imagem e devolve um JPEG quadrado, pronto para subir
- * como foto de perfil.
- *
- * Por que sempre reamostrar para `lado` (512px) em vez de guardar o recorte no
- * tamanho original: a foto que sai da câmera de um celular tem vários megabytes
- * e o bucket recusa acima de 2 MB. Fixar o lado dá um arquivo de dezenas de KB,
- * previsível, e o avatar nunca é exibido maior que 40px de qualquer forma.
- *
- * O fundo é pintado de branco antes do desenho porque JPEG não tem transparência:
- * sem isso, um PNG com fundo transparente sairia com o alfa virando preto.
- */
 export function cropToSquareJpeg(
   src: string,
   area: AreaDeRecorte,
