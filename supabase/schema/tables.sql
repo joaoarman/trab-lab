@@ -233,3 +233,169 @@ comment on column public.income.received_at   is 'Quando o dinheiro ENTROU (com 
 comment on column public.income.is_active     is 'Hoje só acompanha o deleted_at (excluída ⇒ inativa). Reservada para um "arquivar" futuro.';
 comment on column public.income.deleted_at    is 'Soft-delete. Preenchida = excluída (a RLS deixa de devolver a linha). Força is_active = false.';
 comment on column public.income.created_at    is 'Quando a receita foi REGISTRADA. Diferente de expense, esta coluna é LIDA pela tela.';
+
+-- -------------------------------------------------------------------------
+-- public.ai_log — a conversa E a auditoria, numa tabela só
+-- -------------------------------------------------------------------------
+-- UMA conversa por usuário, sem fim e sem título. Por isso não existe tabela de
+-- conversa: ela seria uma linha por perfil, sempre a mesma, e todo
+-- `conversation_id` do sistema seria uma indireção para o que `profile_id` já
+-- diz.
+--
+-- NADA AQUI É APAGADO. Não há grant nem policy de delete, e "limpar a conversa"
+-- é `is_active = false`. O motivo é o log: se a linha sumisse, sumiria junto a
+-- única contabilidade de quanto a IA custou e o único registro do que ela fez.
+create table if not exists public.ai_log (
+  id         int generated always as identity primary key,
+  -- Dono. Diferente das outras tabelas do sistema, NÃO há DEFAULT
+  -- current_profile_id(): esta tabela não é escrita pelo cliente em nenhuma
+  -- hipótese (não há grant de insert), e quem a escreve é `ai_log_add_turn`,
+  -- que resolve o perfil por conta própria. Um default aqui seria uma porta
+  -- que nada usa.
+  profile_id int not null references public.profile (id) on delete cascade,
+
+  -- Quem falou. Inglês MAIÚSCULO como todo domínio fechado do projeto.
+  -- 'SYSTEM' não entra: o system prompt não é conversa — ele é montado a cada
+  -- chamada, em supabase/functions/chat/prompts.ts.
+  role       text not null constraint ai_log_role_valid
+               check (role in ('USER', 'ASSISTANT')),
+
+  -- O texto da bolha. Já transcrito, quando veio de áudio.
+  content    text not null constraint ai_log_content_length
+               check (char_length(content) between 1 and 8000),
+
+  -- Como a mensagem ENTROU. Serve para a bolha marcar o que foi ditado: quando
+  -- a transcrição erra uma palavra, quem lê precisa reconhecer que aquilo veio
+  -- do microfone e não do teclado. Só se aplica ao usuário.
+  source     text not null default 'TEXT' constraint ai_log_source_valid
+               check (source in ('TEXT', 'AUDIO')),
+
+  -- O QUE esta linha é, para a tela saber como pintá-la.
+  --
+  --   MESSAGE — a resposta normal.
+  --   REFUSAL — o assunto estava FORA do sistema. A tela desenha em vermelho.
+  --
+  -- É uma coluna, e não uma dedução do texto, porque a tela não pode ficar
+  -- procurando uma frase dentro do que um modelo de linguagem escreveu: bastaria
+  -- o modelo mudar uma palavra para a recusa deixar de ser vermelha, ou para uma
+  -- resposta legítima virar vermelha por citar a frase. Quem carimba é a Edge
+  -- Function, e ela sabe pelo fato — a ferramenta de recusa rodou ou não rodou.
+  kind       text not null default 'MESSAGE' constraint ai_log_kind_valid
+               check (kind in ('MESSAGE', 'REFUSAL')),
+
+  -- Os CARTÕES DE CONFIRMAÇÃO desta resposta: um por registro criado, editado ou
+  -- excluído no turno. É um array JSON — `[{ "acao": "criado", "tipo": "gasto",
+  -- "nome": "posto de gasolina", "valor": 20, "moeda": "USD", "cotacao": 5.4210,
+  -- "valorEmBrl": 108.42, "categoria": ["Carro", "Gasolina"], … }]`.
+  --
+  -- POR QUE JSON, e não colunas (ou uma FK para expense/income/category)
+  --
+  -- O cartão é um RECIBO: o retrato do registro no instante em que foi salvo. Uma
+  -- FK apontaria para a linha viva, e a bolha de três semanas atrás passaria a
+  -- exibir o valor de hoje — ou a sumir, quando o registro fosse excluído. Um
+  -- recibo que muda depois de emitido não serve para conferir nada, e conferir é
+  -- exatamente o que este cartão existe para permitir.
+  --
+  -- Colunas fixas também não servem: as três entidades (gasto, receita,
+  -- categoria) têm campos diferentes, e um turno pode salvar várias de uma vez
+  -- ("gastei 20 no posto e 50 no mercado").
+  receipts   jsonb constraint ai_log_receipts_is_array
+               check (receipts is null or jsonb_typeof(receipts) = 'array'),
+
+  -- As FERRAMENTAS que rodaram neste turno, com os argumentos e o desfecho —
+  -- `[{ "nome": "registrar_gasto", "argumentos": {…}, "ok": true }]`.
+  --
+  -- É a coluna que responde à pergunta do módulo Log da IA: "o que a IA fez com a
+  -- minha mensagem?". Sem ela, o log diria quanto custou sem dizer o que foi
+  -- feito — e o custo sozinho não audita nada.
+  tool_calls jsonb constraint ai_log_tool_calls_is_array
+               check (tool_calls is null or jsonb_typeof(tool_calls) = 'array'),
+
+  -- O modelo vai gravado NA LINHA, e não deduzido da constante de prompts.ts: a
+  -- constante muda, e sem isto trocar de modelo reescreveria o passado.
+  ai_model   text,
+
+  -- Tokens cobrados. Sem eles o custo é um número sem prestação de contas: não
+  -- dá para saber se foram muitos tokens baratos ou poucos caros, nem o que
+  -- mudou quando a conta subir. `tokens_input_cached` é um PEDAÇO de
+  -- `tokens_input` (a parte que veio do cache de prompt da OpenAI, pela metade
+  -- do preço), não um extra a somar — e só a conversa tem cache; na transcrição
+  -- ele fica nulo.
+  tokens_input        int,
+  tokens_input_cached int,
+  tokens_output       int,
+
+  -- Quanto esta mensagem custou de IA, em CENTAVOS DE DÓLAR — e FRACIONÁRIO: uma
+  -- chamada custa menos de um centavo, então centavo aqui não vira inteiro. Seis
+  -- casas guardam a mesma precisão absoluta de oito casas em dólar (10⁻⁸ dólar =
+  -- 10⁻⁶ centavo); com menos, as chamadas mais baratas arredondariam para zero,
+  -- que aqui significaria "de graça".
+  --
+  -- `numeric` e nunca `float`, por regra do projeto: este número
+  -- existe para ser SOMADO (por dia, por mês, por período do filtro), e a soma de
+  -- uma lista longa em ponto flutuante acumula erro.
+  --
+  -- Preenchido na resposta do ASSISTENTE (a conversa inteira, somando as rodadas
+  -- de ferramenta) e na mensagem de ÁUDIO do usuário (a transcrição). NULL numa
+  -- mensagem digitada: não houve chamada — e null é "não se aplica", nunca "saiu
+  -- de graça".
+  cost_usd_cents numeric(12, 6),
+
+  -- False = o usuário limpou a conversa. A mensagem some da tela do Chat e do
+  -- contexto que vai à IA, mas CONTINUA no banco e continua na tela do Log —
+  -- limpar a conversa não pode levar embora a auditoria nem o custo já pago.
+  is_active  boolean not null default true,
+
+  created_at timestamptz not null default now(),
+
+  -- A IA nunca é ditada: (ASSISTANT, AUDIO) seria um registro impossível.
+  constraint ai_log_audio_is_user check (source = 'TEXT' or role = 'USER'),
+  -- Recusar é ato de quem responde. (USER, REFUSAL) não existe.
+  constraint ai_log_refusal_is_assistant check (kind = 'MESSAGE' or role = 'ASSISTANT'),
+  -- Cartão e ferramenta são do lado da IA: a mensagem do usuário é só o que ele
+  -- disse. Guardá-los na linha dele duplicaria o turno e faria a soma do log
+  -- contar cada ferramenta duas vezes.
+  constraint ai_log_payload_is_assistant check (
+    role = 'ASSISTANT' or (receipts is null and tool_calls is null)
+  ),
+  constraint ai_log_cost_positive check (cost_usd_cents is null or cost_usd_cents >= 0),
+  -- Contagem negativa é dado corrompido, não caso de borda. E o cacheado é um
+  -- PEDAÇO da entrada: maior que ela seria conta impossível, e a checagem pega na
+  -- hora um mapeamento errado do `usage` da API.
+  constraint ai_log_tokens_valid check (
+        (tokens_input        is null or tokens_input        >= 0)
+    and (tokens_input_cached is null or tokens_input_cached >= 0)
+    and (tokens_output       is null or tokens_output       >= 0)
+    and (tokens_input_cached is null or tokens_input is null or tokens_input_cached <= tokens_input)
+  )
+);
+
+comment on table public.ai_log is
+  'A conversa com a IA E a auditoria dela, numa tabela só: uma linha por mensagem (USER e ASSISTANT). O módulo Chat lê o recorte is_active; o módulo Log da IA lê tudo, inclusive o que foi limpo da conversa. Nada aqui é apagado — não há grant nem policy de delete, e limpar é is_active = false.';
+
+comment on column public.ai_log.profile_id is
+  'Dono. Sem DEFAULT current_profile_id(), ao contrário das outras tabelas: esta não é escrita pelo cliente em hipótese nenhuma — quem escreve é ai_log_add_turn.';
+comment on column public.ai_log.role is
+  'Quem falou: USER ou ASSISTANT. Inglês MAIÚSCULO — constante do sistema, não texto de tela.';
+comment on column public.ai_log.content is
+  'O texto da bolha. Já transcrito, quando veio de áudio.';
+comment on column public.ai_log.source is
+  'Como a mensagem entrou: TEXT (digitada) ou AUDIO (ditada e transcrita). Só se aplica a USER.';
+comment on column public.ai_log.kind is
+  'MESSAGE = resposta normal. REFUSAL = o assunto estava fora do sistema, e a tela desenha em vermelho. É coluna, e não dedução do texto: quem carimba é a Edge Function, pelo fato de a ferramenta de recusa ter rodado — a tela não vai procurar uma frase dentro do que um modelo escreveu.';
+comment on column public.ai_log.receipts is
+  'Os cartões de confirmação da resposta — um por registro criado, editado ou excluído no turno. É um RECIBO: o retrato do registro no instante em que foi salvo, e por isso JSON e não FK. Uma FK apontaria para a linha viva, e a bolha de três semanas atrás passaria a exibir o valor de hoje (ou a sumir, se o registro fosse excluído).';
+comment on column public.ai_log.tool_calls is
+  'As ferramentas que rodaram no turno, com argumentos e desfecho. É o que responde "o que a IA fez com a minha mensagem?" na tela do Log — sem isto, o log diria quanto custou sem dizer o que foi feito.';
+comment on column public.ai_log.ai_model is
+  'O modelo que produziu esta mensagem: o de conversa na resposta do assistente, o de transcrição na mensagem ditada. NULL em mensagem digitada. Gravado por linha, e não deduzido da constante atual, porque a constante muda: sem isto, trocar de modelo reescreveria o passado.';
+comment on column public.ai_log.tokens_input is
+  'Tokens de ENTRADA cobrados. Na resposta do assistente, a soma de todas as rodadas de ferramenta. Na transcrição, áudio + texto juntos. NULL quando a API não informou.';
+comment on column public.ai_log.tokens_input_cached is
+  'Quanto da ENTRADA veio do cache de prompt da OpenAI, pela metade do preço. Está DENTRO de tokens_input, não é um extra a somar. Só a conversa tem cache.';
+comment on column public.ai_log.tokens_output is
+  'Tokens de SAÍDA cobrados.';
+comment on column public.ai_log.cost_usd_cents is
+  'Quanto esta mensagem custou de IA, em CENTAVOS de dólar, fracionário (uma chamada custa menos de um centavo). numeric e nunca float: existe para ser somado. NULL em mensagem digitada — não houve chamada, e null não é zero.';
+comment on column public.ai_log.is_active is
+  'False = o usuário limpou a conversa. Some da tela do Chat e do contexto da IA, mas continua no banco e na tela do Log — limpar a conversa não leva embora a auditoria nem o custo já pago.';

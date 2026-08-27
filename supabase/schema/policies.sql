@@ -106,3 +106,20 @@ create policy income_update_own on public.income
 -- Sem policy de DELETE, de propósito: a saída é o soft-delete de
 -- `income_remove()`. Um DELETE de verdade levaria o histórico embora, e um
 -- extrato que perde linhas para sempre não fecha com o mês anterior.
+
+-- --- public.ai_log -------------------------------------------------------
+
+alter table public.ai_log enable row level security;
+
+-- SELECT e nada mais. Não há policy de insert, de update nem de delete, e a
+-- ausência é o desenho:
+--   • inserir é `ai_log_add_turn` (security definer). Com policy de insert, um
+--     cliente poderia forjar uma resposta da IA — inclusive um "✅ gasto salvo"
+--     que nunca aconteceu;
+--   • atualizar é `chat_clear` (idem). Com policy de update, o mesmo caminho que
+--     limpa a conversa reescreveria o custo já contabilizado;
+--   • apagar não existe. Ver o comentário da tabela.
+drop policy if exists ai_log_select_own on public.ai_log;
+create policy ai_log_select_own on public.ai_log
+  for select to authenticated
+  using (profile_id = public.current_profile_id());

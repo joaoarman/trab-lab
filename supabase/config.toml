@@ -128,3 +128,29 @@ token_verifications = 30
 # Como o push reseta o que não está declarado, deixar de fora é a MANEIRA de
 # manter tudo isso desligado — não um esquecimento.
 # -----------------------------------------------------------------------------
+
+
+# =============================================================================
+# EDGE FUNCTIONS
+#
+# O código está em `supabase/functions/<nome>/`; as chaves da OpenAI, em
+# `supabase/functions/.env` (local, gitignored) e nos *secrets* do projeto
+# (produção). Ver `supabase/functions/.env.example`.
+#
+#     supabase functions deploy chat
+#     supabase functions deploy transcribe
+#     supabase secrets set --env-file supabase/functions/.env
+#
+# `verify_jwt = true` é o padrão do CLI, e está DECLARADO porque estas duas
+# funções gastam dinheiro por chamada: sem a exigência do token, qualquer pessoa
+# com a URL do projeto poderia disparar chamadas à OpenAI na conta do dono. É
+# também o que permite as funções usarem o JWT DO USUÁRIO ao falar com o banco —
+# a RLS vale para a IA exatamente como vale para a tela, e nenhuma delas usa
+# service_role.
+# =============================================================================
+
+[functions.chat]
+verify_jwt = true
+
+[functions.transcribe]
+verify_jwt = true

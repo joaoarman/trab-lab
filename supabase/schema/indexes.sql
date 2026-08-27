@@ -57,3 +57,23 @@ create index if not exists expense_category_idx
 create index if not exists income_profile_received_idx
   on public.income (profile_id, received_at desc)
   where deleted_at is null;
+
+-- --- public.ai_log -------------------------------------------------------
+
+
+-- A leitura do módulo LOG DA IA: "tudo deste perfil, do mais recente para o mais
+-- antigo, dentro de um período". As colunas na ordem em que a query as usa.
+create index if not exists ai_log_profile_created_idx
+  on public.ai_log (profile_id, created_at desc, id desc);
+
+-- A leitura do módulo CHAT: só a conversa viva, paginada por id.
+--
+-- Paginar por **id**, e não por data, porque a pergunta e a resposta de um turno
+-- nascem no mesmo `now()` — uma paginação por `created_at` poderia repetir ou
+-- pular uma das duas na virada da página.
+--
+-- Índice PARCIAL: a conversa limpa não é lida pelo Chat nunca, e mantê-la fora do
+-- índice é o que faz "limpar" também aliviar a leitura mais quente do sistema.
+create index if not exists ai_log_chat_idx
+  on public.ai_log (profile_id, id desc)
+  where is_active;

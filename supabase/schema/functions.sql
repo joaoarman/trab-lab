@@ -716,3 +716,432 @@ begin
   end if;
 end;
 $$;
+
+-- --- public.ai_log e as RPCs do Chat -------------------------------------
+
+-- -------------------------------------------------------------------------
+-- ai_log_add_turn — grava o turno inteiro, ou nada
+-- -------------------------------------------------------------------------
+-- A pergunta e a resposta entram numa TRANSAÇÃO SÓ e voltam prontas para a tela.
+-- É atômico de propósito: metade de um turno é pior do que nenhum — uma pergunta
+-- sem resposta ficaria como bolha órfã esperando para sempre, e uma resposta sem
+-- pergunta faria a conversa parecer que a IA falou sozinha.
+--
+-- É a ÚNICA forma de escrever em public.ai_log: não há grant nem policy de
+-- insert. Chamada pela Edge Function `chat` com o JWT DO USUÁRIO, nunca com
+-- service_role — o perfil sai de auth.uid(), então nem a função nem o modelo
+-- conseguem gravar na conversa de outra pessoa.
+create or replace function public.ai_log_add_turn(
+  p_user_content      text,
+  p_assistant_content text,
+  p_user_source       text default 'TEXT',
+
+  -- A mensagem do USUÁRIO só tem extrato de IA quando veio de áudio: o custo é o
+  -- da transcrição, que rodou na outra Edge Function, antes de esta linha existir.
+  p_user_cost_usd_cents numeric default null,
+  p_user_model          text    default null,
+  p_user_tokens_input   int     default null,
+  p_user_tokens_output  int     default null,
+
+  -- A resposta do ASSISTENTE.
+  p_assistant_kind            text    default 'MESSAGE',
+  p_assistant_receipts        jsonb   default null,
+  p_assistant_tool_calls      jsonb   default null,
+  p_assistant_cost_usd_cents  numeric default null,
+  p_assistant_model           text    default null,
+  -- Todas as rodadas de ferramenta somadas: um turno com quatro idas ao modelo
+  -- custou as quatro, e o extrato tem de dizer isso.
+  p_assistant_tokens_input    int     default null,
+  p_assistant_tokens_cached   int     default null,
+  p_assistant_tokens_output   int     default null
+)
+returns setof public.ai_log
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_profile_id int;
+begin
+  v_profile_id := public.current_profile_id();
+
+  -- `current_profile_id()` já filtra conta desativada, então isto também é o que
+  -- fecha o Chat para quem cancelou a conta: sem perfil, não há turno.
+  if v_profile_id is null then
+    raise exception 'profile_not_found' using errcode = 'P0001';
+  end if;
+
+  if p_user_source not in ('TEXT', 'AUDIO') then
+    raise exception 'invalid_source' using errcode = 'P0001';
+  end if;
+
+  if p_assistant_kind not in ('MESSAGE', 'REFUSAL') then
+    raise exception 'invalid_kind' using errcode = 'P0001';
+  end if;
+
+  if coalesce(btrim(p_user_content), '') = ''
+     or coalesce(btrim(p_assistant_content), '') = '' then
+    raise exception 'empty_message' using errcode = 'P0001';
+  end if;
+
+  -- Mensagem DIGITADA não chamou IA nenhuma: não há custo, modelo nem token a
+  -- guardar. O descarte acontece aqui, e não na Edge Function, para que a regra
+  -- valha para qualquer um que um dia chame esta RPC.
+  if p_user_source = 'TEXT' then
+    p_user_cost_usd_cents := null;
+    p_user_model          := null;
+    p_user_tokens_input   := null;
+    p_user_tokens_output  := null;
+  end if;
+
+  return query
+  insert into public.ai_log (
+    profile_id, role, content, source, kind,
+    receipts, tool_calls,
+    cost_usd_cents, ai_model, tokens_input, tokens_input_cached, tokens_output
+  )
+  values
+    (v_profile_id, 'USER', btrim(p_user_content), p_user_source, 'MESSAGE',
+     null, null,
+     p_user_cost_usd_cents, p_user_model, p_user_tokens_input, null, p_user_tokens_output),
+    (v_profile_id, 'ASSISTANT', btrim(p_assistant_content), 'TEXT', p_assistant_kind,
+     p_assistant_receipts, p_assistant_tool_calls,
+     p_assistant_cost_usd_cents, p_assistant_model,
+     p_assistant_tokens_input, p_assistant_tokens_cached, p_assistant_tokens_output)
+  returning *;
+end;
+$$;
+
+comment on function public.ai_log_add_turn(text, text, text, numeric, text, int, int, text, jsonb, jsonb, numeric, text, int, int, int) is
+  'Grava o turno da conversa (pergunta + resposta) numa transação só e devolve as duas linhas. Única forma de inserir em public.ai_log — não há grant nem policy de INSERT, o que impede um cliente de forjar uma resposta da IA. Mensagem digitada tem custo, modelo e tokens zerados para null aqui dentro. Chamada pela Edge Function `chat` com o JWT do usuário, nunca com service_role.';
+
+
+-- -------------------------------------------------------------------------
+-- 5. chat_clear — o "limpar conversa"
+-- -------------------------------------------------------------------------
+-- As mensagens somem da tela do Chat e do contexto que vai à IA, mas NÃO do
+-- banco: é `is_active = false`, nunca delete. A tela do Log continua mostrando
+-- tudo, e o custo já pago continua contabilizado.
+--
+-- É uma RPC, e não um update do cliente, porque não há grant de update na tabela.
+-- Com grant, o mesmo caminho que limpa a conversa poderia reescrever o custo — e
+-- a auditoria deixaria de ser auditoria.
+--
+-- Devolve quantas linhas saíram da conversa, para a tela poder dizer o que fez.
+create or replace function public.chat_clear()
+returns int
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_profile_id int := public.current_profile_id();
+  v_count      int;
+begin
+  if v_profile_id is null then
+    raise exception 'profile_not_found' using errcode = 'P0001';
+  end if;
+
+  update public.ai_log
+     set is_active = false
+   where profile_id = v_profile_id
+     and is_active;
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+
+comment on function public.chat_clear() is
+  'Limpa a conversa do Chat: is_active = false nas mensagens do perfil, nunca delete. Elas somem da tela e do contexto da IA, mas continuam no banco e na tela do Log da IA — limpar não leva embora a auditoria nem o custo já pago. Devolve quantas saíram.';
+
+
+-- -------------------------------------------------------------------------
+-- 6. category_resolve_path — o achar-ou-criar de `Carro › Gasolina`
+-- -------------------------------------------------------------------------
+-- É a função que faz o Chat cumprir a promessa do produto: "gastei 20 no posto"
+-- vira um gasto em **Carro › Gasolina**, e a hierarquia é criada na hora se ainda
+-- não existir. Sem isto, a IA teria de mandar o usuário abrir a tela de
+-- Categorias antes de registrar — exatamente a fricção que o sistema existe para
+-- eliminar.
+--
+-- Recebe o CAMINHO ('{Carro,Gasolina}') e devolve o id da FOLHA, criando cada
+-- degrau que faltar. O caminho, e não o nome solto, porque a mesma folha pode
+-- existir em dois galhos ("Casa › Mercado" e "Trabalho › Mercado") e um nome
+-- sozinho não escolheria entre eles.
+--
+-- ## A comparação é por nome, sem maiúsculas — a mesma do índice
+--
+-- `lower(btrim(name))` é exatamente o que `category_sibling_name_uk` indexa. Tem
+-- de ser: se esta função procurasse de um jeito e o índice barrasse de outro,
+-- "gasolina" não acharia "Gasolina" e o insert seguinte bateria no unique. O
+-- usuário veria um erro por ter falado com letra minúscula.
+--
+-- ## Categoria DESATIVADA é reaproveitada, e reativada
+--
+-- Se a pessoa está gastando com Gasolina de novo, a gaveta volta para a árvore.
+-- A alternativa seria criar uma segunda "Gasolina" ao lado da desativada — o que
+-- o índice único recusa —, ou registrar o gasto numa categoria que o usuário não
+-- enxerga na tela. As duas são piores.
+--
+-- `security definer` porque a função precisa DESCER pela árvore conferindo cada
+-- degrau, e essa descida não pode depender da RLS de quem chamou. Toda consulta
+-- é presa a `v_profile_id`, então não há linha de terceiro alcançável por aqui.
+create or replace function public.category_resolve_path(
+  p_path  text[],
+  -- A cor das categorias criadas no caminho. Null = o default da coluna. É um
+  -- parâmetro (e não sempre o default) para o Chat poder dar a uma árvore nova a
+  -- cor que combina com o assunto, em vez de deixar tudo esmeralda.
+  p_color text default null
+)
+returns int
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_profile_id int := public.current_profile_id();
+  v_parent_id  int := null;
+  v_id         int;
+  v_nome       text;
+  v_ativa      boolean;
+  v_reativar   boolean := false;
+  i            int;
+begin
+  if v_profile_id is null then
+    raise exception 'profile_not_found' using errcode = 'P0001';
+  end if;
+
+  if p_path is null or array_length(p_path, 1) is null then
+    raise exception 'category_path_empty' using errcode = 'P0001';
+  end if;
+
+  -- Teto de profundidade. A árvore é livre por desenho, mas um caminho de vinte
+  -- degraus vindo de um modelo de linguagem é engano, não hierarquia — e criá-lo
+  -- deixaria na conta da pessoa vinte categorias para apagar à mão.
+  if array_length(p_path, 1) > 5 then
+    raise exception 'category_path_too_deep' using errcode = 'P0001';
+  end if;
+
+  for i in 1 .. array_length(p_path, 1) loop
+    v_nome := btrim(p_path[i]);
+
+    if v_nome = '' or char_length(v_nome) > 60 then
+      raise exception 'category_name_invalid' using errcode = 'P0001';
+    end if;
+
+    -- `coalesce(parent_id, 0) = coalesce(v_parent_id, 0)`: em SQL, null não é
+    -- igual a null, então comparar as duas colunas direto nunca acharia uma
+    -- categoria de topo. É o mesmo coalesce que o índice único usa — as duas
+    -- coisas têm de enxergar "irmã" da mesma forma.
+    select c.id, c.is_active
+      into v_id, v_ativa
+      from public.category c
+     where c.profile_id = v_profile_id
+       and c.deleted_at is null
+       and coalesce(c.parent_id, 0) = coalesce(v_parent_id, 0)
+       and lower(btrim(c.name)) = lower(v_nome)
+     limit 1;
+
+    if v_id is null then
+      insert into public.category (profile_id, parent_id, name, color)
+      values (v_profile_id, v_parent_id, v_nome, coalesce(p_color, '#10b981'))
+      returning id into v_id;
+    elsif not v_ativa then
+      -- Achada, mas fora da árvore. A reativação não acontece degrau a degrau
+      -- aqui dentro: quem sabe subir a cadeia inteira de mães é
+      -- category_reactivate, e chamá-la uma vez no fim é o que garante que a
+      -- folha volte VISÍVEL, e não pendurada numa mãe ainda desativada.
+      v_reativar := true;
+    end if;
+
+    v_parent_id := v_id;
+    v_id := null;
+  end loop;
+
+  if v_reativar then
+    perform public.category_reactivate(v_parent_id);
+  end if;
+
+  return v_parent_id;
+end;
+$$;
+
+comment on function public.category_resolve_path(text[], text) is
+  'Acha ou cria o caminho de categorias ({Carro,Gasolina}) e devolve o id da FOLHA. É o que permite ao Chat classificar um gasto sem o usuário ter montado a árvore antes. Compara por lower(btrim(name)) — a mesma regra do índice category_sibling_name_uk, senão "gasolina" não acharia "Gasolina" e o insert bateria no unique. Categoria desativada é reaproveitada e reativada (com a cadeia de mães), nunca duplicada.';
+
+
+-- -------------------------------------------------------------------------
+-- 7. As agregações que o Chat consulta
+-- -------------------------------------------------------------------------
+-- "Quanto gastei nos últimos 15 dias com Carro?" tem UMA resposta: um número. Sem
+-- estas funções, a Edge Function traria as trezentas linhas do período para somar
+-- em JavaScript — e as trezentas linhas ainda teriam de caber no contexto do
+-- modelo, que é onde o token custa dinheiro.
+--
+-- ## Todas são `security invoker` (o padrão), e isso é o ponto
+--
+-- Nenhuma leva `security definer`: elas rodam com os privilégios de quem chamou,
+-- então a RLS de `expense`/`income` se aplica exatamente como se aplica à tela.
+-- A Edge Function usa o JWT do usuário, logo a IA soma o que o dono somaria, e
+-- nada além. Um `security definer` aqui abriria a soma do sistema inteiro para
+-- quem soubesse chamar a RPC.
+--
+-- ## O período chega em `timestamptz`, fechado no início e ABERTO no fim
+--
+-- É a mesma convenção de `shared/utils/datas.ts` e das queries das telas: `>= de`
+-- e `< até`, com `até` sendo o começo do dia seguinte. Comparar `<= '2026-08-31'`
+-- deixaria de fora tudo o que aconteceu depois da meia-noite daquele dia — o
+-- último dia do recorte inteiro, silenciosamente.
+
+-- -------------------------------------------------------------------------
+-- expense_report — o total e a contagem de um recorte de gastos
+-- -------------------------------------------------------------------------
+-- `p_category_ids` já chega com a SUBÁRVORE inteira resolvida. Quem a resolve é a
+-- Edge Function, que carrega a árvore de categorias no prompt e portanto já sabe
+-- quem desce de quem — pedir ao banco para recalcular a recursiva a cada pergunta
+-- seria refazer, por consulta, um trabalho que já está feito na memória.
+--
+-- Os três filtros são independentes e todos opcionais:
+--   • `p_category_ids` null = todas as categorias;
+--   • `p_uncategorized` true = SÓ os gastos sem categoria (e aí os ids são
+--     ignorados). São perguntas diferentes — "quanto gastei com Carro" e "quanto
+--     gastei sem classificar" —, e um `null` no array não conseguiria dizer a
+--     segunda;
+--   • `p_search` filtra pelo nome do gasto, sem maiúsculas e sem acento posicional
+--     (ILIKE com % dos dois lados). É como se responde "quanto gastei no posto?"
+--     quando "posto" é o texto do gasto, e não uma categoria.
+create or replace function public.expense_report(
+  p_from          timestamptz default null,
+  p_to            timestamptz default null,
+  p_category_ids  int[]   default null,
+  p_uncategorized boolean default false,
+  p_search        text    default null
+)
+returns table (total_brl numeric, quantity int)
+language sql
+stable
+set search_path = ''
+as $$
+  select coalesce(sum(e.amount_brl), 0)::numeric(12,2),
+         count(*)::int
+    from public.expense e
+   -- Null = sem limite deste lado, para o Chat poder perguntar "o último gasto,
+   -- seja de quando for". Com as datas, o recorte segue fechado no início e
+   -- aberto no fim, como no resto do sistema.
+   where (p_from is null or e.occurred_at >= p_from)
+     and (p_to   is null or e.occurred_at <  p_to)
+     and (case
+            when p_uncategorized then e.category_id is null
+            when p_category_ids is null then true
+            else e.category_id = any (p_category_ids)
+          end)
+     and (p_search is null or e.name ilike '%' || p_search || '%');
+$$;
+
+comment on function public.expense_report(timestamptz, timestamptz, int[], boolean, text) is
+  'Total (em reais) e quantidade de gastos num recorte: período, categorias (a subárvore já resolvida pela Edge Function), só-sem-categoria, e busca por nome. security invoker de propósito — a RLS de expense se aplica, então a IA soma o que o dono somaria e nada além.';
+
+-- -------------------------------------------------------------------------
+-- expense_by_category — o mesmo recorte, quebrado por categoria DIRETA
+-- -------------------------------------------------------------------------
+-- Devolve a categoria em que o gasto foi lançado, sem rolar nada para cima: quem
+-- soma "Carro › Gasolina" dentro de "Carro" é a Edge Function, que tem a árvore.
+-- Fazer a rolagem aqui obrigaria a uma recursiva por linha e devolveria o mesmo
+-- dinheiro contado duas vezes (uma na folha, outra na mãe) — um relatório que não
+-- fecha com o próprio total.
+--
+-- `category_id` nulo é uma linha legítima do resultado: é o "Sem categoria".
+create or replace function public.expense_by_category(
+  p_from timestamptz,
+  p_to   timestamptz
+)
+returns table (category_id int, quantity int, total_brl numeric)
+language sql
+stable
+set search_path = ''
+as $$
+  select e.category_id,
+         count(*)::int,
+         sum(e.amount_brl)::numeric(12,2)
+    from public.expense e
+   where e.occurred_at >= p_from
+     and e.occurred_at <  p_to
+   group by e.category_id
+   order by 3 desc;
+$$;
+
+comment on function public.expense_by_category(timestamptz, timestamptz) is
+  'Gastos do período agrupados pela categoria DIRETA em que foram lançados (category_id nulo = Sem categoria), do maior total para o menor. Não rola para as categorias-mãe de propósito: quem soma a subárvore é a Edge Function, que tem a árvore — somar aqui contaria o mesmo dinheiro duas vezes.';
+
+-- -------------------------------------------------------------------------
+-- income_report — o espelho de expense_report, sem categoria
+-- -------------------------------------------------------------------------
+-- Dois parâmetros a menos, e a ausência é o módulo: receita não tem categoria
+-- (ver o comentário de public.income). O que sobra é o período e a busca por
+-- nome, que aqui é a pergunta principal — "quanto recebi de freela esse ano?" se
+-- responde pelo nome, porque o nome é o único descritor que a receita tem.
+create or replace function public.income_report(
+  p_from   timestamptz default null,
+  p_to     timestamptz default null,
+  p_search text default null
+)
+returns table (total_brl numeric, quantity int)
+language sql
+stable
+set search_path = ''
+as $$
+  select coalesce(sum(i.amount_brl), 0)::numeric(12,2),
+         count(*)::int
+    from public.income i
+   where (p_from is null or i.received_at >= p_from)
+     and (p_to   is null or i.received_at <  p_to)
+     and (p_search is null or i.name ilike '%' || p_search || '%');
+$$;
+
+comment on function public.income_report(timestamptz, timestamptz, text) is
+  'Total (em reais) e quantidade de receitas num recorte: período e busca por nome. Sem filtro de categoria — receita não tem. security invoker: a RLS de income se aplica.';
+
+-- -------------------------------------------------------------------------
+-- ai_log_report — o consumo de IA de um período
+-- -------------------------------------------------------------------------
+-- O rodapé da tela do Log da IA: quantas mensagens, quanto custou e quantos
+-- tokens, num recorte de tempo.
+--
+-- Existe pelo mesmo motivo de `expense_report`: somar no cliente exigiria trazer
+-- todas as linhas do período, e a tela só lista as mais recentes. Um total somado
+-- sobre a página visível seria menor que a verdade, com cara de resposta certa —
+-- que é o defeito que este sistema mais evita.
+--
+-- SOMA TUDO, inclusive o que o usuário limpou da conversa (`is_active = false`).
+-- É o ponto do módulo: limpar a conversa não apaga o custo já pago à OpenAI, e um
+-- relatório que perdesse essas linhas subdeclararia o consumo justo de quem mais
+-- usa o chat.
+--
+-- `coalesce` no custo porque `sum` de um conjunto vazio é null, e a tela precisa
+-- de um zero para escrever "R$ 0,00" em vez de nada. Nos tokens o coalesce faz o
+-- mesmo — e note que aqui zero é a resposta certa: nenhuma mensagem, nenhum token.
+-- É diferente do null de UMA linha, que significa "não houve chamada de IA".
+--
+-- `security invoker` (o padrão): a RLS de ai_log se aplica, então cada um soma o
+-- próprio consumo.
+create or replace function public.ai_log_report(
+  p_from timestamptz,
+  p_to   timestamptz
+)
+returns table (messages int, cost_usd_cents numeric, tokens_input int, tokens_output int)
+language sql
+stable
+set search_path = ''
+as $$
+  select count(*)::int,
+         coalesce(sum(l.cost_usd_cents), 0)::numeric(14,6),
+         coalesce(sum(l.tokens_input), 0)::int,
+         coalesce(sum(l.tokens_output), 0)::int
+    from public.ai_log l
+   where l.created_at >= p_from
+     and l.created_at <  p_to;
+$$;
+
+comment on function public.ai_log_report(timestamptz, timestamptz) is
+  'Consumo de IA de um período: mensagens, custo em centavos de dólar e tokens. Soma TUDO, inclusive o que o usuário limpou da conversa — limpar não apaga o custo já pago. security invoker: a RLS de ai_log se aplica, então cada um soma o próprio consumo.';

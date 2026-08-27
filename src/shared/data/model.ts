@@ -281,3 +281,153 @@ export interface RascunhoDeReceita {
  * compartilhado.
  */
 export type FiltroDeReceitas = RecorteDePeriodo
+
+// =============================================================================
+// O Chat e o Log da IA — dois módulos, UMA tabela (`public.ai_log`)
+//
+// A conversa e a auditoria são a mesma linha vista de dois ângulos. O Chat lê o
+// recorte ativo e desenha bolhas; o Log lê tudo, inclusive o que foi limpo da
+// conversa, e mostra modelo, tokens, custo e as ferramentas que rodaram.
+//
+// Por isso não há dois tipos de domínio, e sim um (`MensagemDaIA`) com os campos
+// de auditoria anuláveis. Dois tipos exigiriam duas conversões da mesma linha, e
+// elas divergiriam no dia em que a tabela ganhasse uma coluna.
+// =============================================================================
+
+/** Quem falou. Espelha o check de `ai_log.role`. */
+export type PapelNaConversa = 'USER' | 'ASSISTANT'
+
+/** Como a mensagem do usuário entrou. Espelha `ai_log.source`. */
+export type OrigemDaMensagem = 'TEXT' | 'AUDIO'
+
+/**
+ * O que a resposta da IA é. Espelha `ai_log.kind`.
+ *
+ * `REFUSAL` é o assunto fora do sistema, e a bolha o desenha em vermelho. É um
+ * campo, e não uma frase reconhecida no texto: quem carimba é a Edge Function,
+ * pelo fato de a ferramenta de recusa ter rodado. A tela não vai procurar uma
+ * frase dentro do que um modelo de linguagem escreveu.
+ */
+export type TipoDeResposta = 'MESSAGE' | 'REFUSAL'
+
+/** O que aconteceu com o registro que o cartão de confirmação retrata. */
+export type AcaoDoRecibo = 'criado' | 'editado' | 'excluido' | 'desativado'
+
+/** Sobre qual entidade o cartão fala. */
+export type TipoDoRecibo = 'gasto' | 'receita' | 'categoria'
+
+/**
+ * O CARTÃO DE CONFIRMAÇÃO de um registro feito pela conversa — o que a bolha
+ * desenha embaixo da resposta da IA.
+ *
+ * ## É um recibo, e recibo não muda
+ *
+ * Os valores vêm gravados em `ai_log.receipts`, e não buscados na `expense` /
+ * `income` / `category` pelo id. É de propósito: a bolha de três semanas atrás
+ * tem de continuar mostrando o que foi salvo naquele dia, mesmo que o gasto tenha
+ * sido editado (ou excluído) depois. Um cartão que se atualiza sozinho não serve
+ * para conferir nada — e conferir é a única razão de ele existir.
+ *
+ * ## Por que a hierarquia inteira, e não só a folha
+ *
+ * `categoria` vem como caminho (`['Carro', 'Gasolina']`) porque é ele que deixa o
+ * usuário verificar se a IA acertou a gaveta. "Gasolina" sozinha não distingue a
+ * do carro da do gerador, e a escolha da categoria é justamente a decisão que a IA
+ * toma sozinha neste sistema.
+ */
+export interface ReciboDeRegistro {
+  acao: AcaoDoRecibo
+  tipo: TipoDoRecibo
+  id: number
+  /** O nome do gasto/receita, ou o nome da categoria. */
+  nome: string
+  /** Em reais (ou na unidade de `moeda`). Ausente num cartão de categoria. */
+  valor?: number
+  moeda?: Moeda
+  /** Quantos reais valia 1 unidade de `moeda`. Null (ou ausente) em BRL. */
+  cotacao?: number | null
+  /** O mesmo valor em reais — é ele que todo total do sistema soma. */
+  valorEmBrl?: number
+  /** A hierarquia inteira: `['Carro', 'Gasolina']`. Null = sem categoria. */
+  categoria?: string[] | null
+  /** A cor da categoria (hex), nos cartões de categoria. */
+  cor?: string
+  /**
+   * True = a categoria deste lançamento **nasceu no mesmo turno**.
+   *
+   * A tela marca o caminho com um selo de "nova". É o antídoto para o defeito de
+   * a IA escrever "criei a categoria X" sem ter criado nada: o texto da bolha é o
+   * que ela diz, este campo é o que o banco fez.
+   */
+  categoriaCriada?: boolean
+  /** Quando o lançamento aconteceu (ISO). Ausente num cartão de categoria. */
+  aconteceuEm?: string
+  /** Quando a linha entrou no banco (ISO). */
+  criadoEm: string
+}
+
+/**
+ * Uma ferramenta que a IA executou no turno — a linha do "o que ela fez".
+ *
+ * É o que responde à pergunta central do módulo Log da IA. Sem ela o log diria
+ * quanto custou sem dizer o que foi feito, e custo sozinho não audita nada.
+ *
+ * `argumentos` vem como o objeto cru que o modelo montou, de propósito: é a prova
+ * do que ele pediu, e normalizá-lo aqui apagaria justamente o que se quer
+ * auditar. A tela o exibe como JSON formatado.
+ */
+export interface FerramentaExecutada {
+  nome: string
+  argumentos: unknown
+  /** False = a chamada falhou, e `erro` diz o motivo que voltou ao modelo. */
+  ok: boolean
+  erro?: string
+}
+
+/**
+ * Uma linha de `public.ai_log` — a mensagem da conversa **e** o registro de
+ * auditoria dela.
+ *
+ * Os campos de custo são todos anuláveis, e null nunca é zero: é "não houve
+ * chamada de IA" (uma mensagem digitada) ou "a API não informou". A distinção
+ * importa na tela do Log, que soma o período — uma mensagem sem custo não pode
+ * entrar na conta como se tivesse saído de graça.
+ */
+export interface MensagemDaIA {
+  id: number
+  papel: PapelNaConversa
+  conteudo: string
+  origem: OrigemDaMensagem
+  tipo: TipoDeResposta
+  /** Os cartões de confirmação. Vazio quando nada foi gravado no turno. */
+  recibos: ReciboDeRegistro[]
+  /** As ferramentas do turno. Vazio quando a IA só conversou. */
+  ferramentas: FerramentaExecutada[]
+  /** O modelo que produziu a linha. Null em mensagem digitada. */
+  modelo: string | null
+  tokensEntrada: number | null
+  /** Parte de `tokensEntrada` que veio do cache — não é um extra a somar. */
+  tokensEntradaCacheados: number | null
+  tokensSaida: number | null
+  /** Em CENTAVOS de dólar, fracionário. Null = não houve chamada. */
+  custoEmCentavosDeDolar: number | null
+  /** False = o usuário limpou a conversa. Some do Chat, fica no Log. */
+  naConversa: boolean
+  criadaEm: string
+}
+
+/**
+ * O consumo de IA de um período — o rodapé da tela do Log.
+ *
+ * Existe como tipo próprio (e não como três números soltos) porque as três
+ * respostas andam juntas: um custo sem a contagem de mensagens não diz se o mês
+ * foi caro ou movimentado.
+ */
+export interface ConsumoDeIA {
+  /** Quantas linhas de `ai_log` no período — as duas pontas do turno contam. */
+  mensagens: number
+  /** Em CENTAVOS de dólar, fracionário. */
+  custoEmCentavosDeDolar: number
+  tokensEntrada: number
+  tokensSaida: number
+}

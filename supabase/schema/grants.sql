@@ -63,6 +63,7 @@ revoke execute on function public.category_remove(int)     from public, anon;
 grant  execute on function public.category_remove(int)     to authenticated;
 
 revoke execute on function public.category_reactivate(int) from public, anon;
+grant  execute on function public.category_reactivate(int) to authenticated;
 
 -- --- public.expense ------------------------------------------------------
 -- Dois recortes, por dois motivos distintos:
@@ -110,3 +111,38 @@ revoke execute on function public.income_guard() from public, anon, authenticate
 -- O que a tela chama: só quem está logado.
 revoke execute on function public.income_remove(int) from public, anon;
 grant  execute on function public.income_remove(int) to authenticated;
+
+
+-- --- public.ai_log --------------------------------------------------------
+-- SELECT e MAIS NADA. Sem insert (senão um cliente forjaria uma resposta da IA —
+-- inclusive um "✅ gasto salvo" que nunca aconteceu), sem update (senão o mesmo
+-- caminho que limpa a conversa reescreveria o custo já contabilizado) e sem
+-- delete (a auditoria não se apaga). Escrever é pelas duas RPCs abaixo.
+revoke all    on public.ai_log from anon, authenticated;
+grant  select on public.ai_log to   authenticated;
+
+revoke execute on function public.ai_log_add_turn(text, text, text, numeric, text, int, int, text, jsonb, jsonb, numeric, text, int, int, int) from public, anon;
+grant  execute on function public.ai_log_add_turn(text, text, text, numeric, text, int, int, text, jsonb, jsonb, numeric, text, int, int, int) to   authenticated;
+
+revoke execute on function public.chat_clear() from public, anon;
+grant  execute on function public.chat_clear() to   authenticated;
+
+-- --- o achar-ou-criar de categoria ---------------------------------------
+-- Exposta a `authenticated` porque quem a chama é a Edge Function `chat`, e ela
+-- roda com o JWT do usuário — não com service_role. O escopo por dono continua
+-- sendo do banco: a função resolve o perfil por current_profile_id().
+revoke execute on function public.category_resolve_path(text[], text) from public, anon;
+grant  execute on function public.category_resolve_path(text[], text) to   authenticated;
+
+-- --- as agregações --------------------------------------------------------
+revoke execute on function public.expense_report(timestamptz, timestamptz, int[], boolean, text) from public, anon;
+grant  execute on function public.expense_report(timestamptz, timestamptz, int[], boolean, text) to   authenticated;
+
+revoke execute on function public.expense_by_category(timestamptz, timestamptz) from public, anon;
+grant  execute on function public.expense_by_category(timestamptz, timestamptz) to   authenticated;
+
+revoke execute on function public.income_report(timestamptz, timestamptz, text) from public, anon;
+grant  execute on function public.income_report(timestamptz, timestamptz, text) to   authenticated;
+
+revoke execute on function public.ai_log_report(timestamptz, timestamptz) from public, anon;
+grant  execute on function public.ai_log_report(timestamptz, timestamptz) to   authenticated;

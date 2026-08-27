@@ -55,6 +55,7 @@ export default {
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+          muted: 'hsl(var(--destructive-muted))',
         },
         // Atenção (âmbar): "isto ainda não está salvo". Por que não é
         // destructive nem expense está no theme.css.

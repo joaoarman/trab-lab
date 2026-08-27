@@ -92,17 +92,84 @@
     "ptBR": "Português (Brasil)",
     "en": "English"
   },
-  "placeholder": {
-    "title": "Module not implemented yet",
-    "description": "The structure of this screen already exists: page, components folder, data layer (supabase.ts). The content lands once the module is specified.",
-    "nextSteps": "Next steps"
-  },
   "chat": {
-    "placeholder": {
-      "step1": "Conversation and AI log tables",
-      "step2": "Chat Edge Function with expense, income and category tools",
-      "step3": "Bubbles, audio recorder and transcription",
-      "step4": "Confirmation card for a saved record"
+    "typing": "The AI is replying",
+    "loadPrevious": "Load earlier messages",
+    "day": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "message": {
+      "transcribing": "Transcribing the audio…",
+      "fromAudio": "Message sent as audio"
+    },
+    "composer": {
+      "placeholder": "Spent 20 at the gas station…",
+      "label": "Write your message",
+      "send": "Send message",
+      "record": "Record audio",
+      "sendRecording": "Send the recording",
+      "cancelRecording": "Discard the recording",
+      "pauseRecording": "Pause recording",
+      "resumeRecording": "Keep recording",
+      "playback": "Listen to the recording"
+    },
+    "recording": {
+      "permission_denied": "I couldn't reach the microphone. Allow it in your browser and try again.",
+      "unsupported": "This browser can't record audio. Type your message instead."
+    },
+    "welcome": {
+      "title": "Just say it, I'll write it down",
+      "description": "Track and check your expenses and income by chatting — typing or speaking. I pick the category and show you exactly what I saved.",
+      "examples": {
+        "expense": "Spent 20 at the gas station",
+        "dollar": "Paid 12 dollars for yesterday's subscription",
+        "income": "My salary came in, 4,200",
+        "query": "How much did I spend on the car this month?",
+        "summary": "Where did most of my money go in the last 30 days?"
+      }
+    },
+    "clear": {
+      "action": "Clear chat",
+      "title": "Clear the conversation?",
+      "description": "The messages disappear from this screen, but your expenses, income and categories stay exactly as they are — clearing the chat undoes nothing it recorded. The history and the cost stay in the AI Log.",
+      "confirm": "Clear",
+      "done": "Conversation cleared."
+    },
+    "receipt": {
+      "gasto": {
+        "criado": "Expense saved",
+        "editado": "Expense updated",
+        "excluido": "Expense deleted",
+        "desativado": "Expense deactivated"
+      },
+      "receita": {
+        "criado": "Income saved",
+        "editado": "Income updated",
+        "excluido": "Income deleted",
+        "desativado": "Income deactivated"
+      },
+      "categoria": {
+        "criado": "Category created",
+        "editado": "Category updated",
+        "excluido": "Category deleted",
+        "desativado": "Category deactivated"
+      },
+      "converted": "{{original}} · rate {{rate}}",
+      "noCategory": "No category",
+      "newCategory": "new",
+      "occurredAt": "Happened on",
+      "receivedAt": "Received on",
+      "createdAt": "Recorded on"
+    },
+    "errors": {
+      "ai_not_configured": "The AI isn't set up on this system yet.",
+      "ai_rate_limited": "The AI is overloaded right now. Try again in a moment.",
+      "ai_failed": "The AI couldn't reply. Try again.",
+      "transcription_failed": "I couldn't transcribe the audio. Record it again or type your message.",
+      "audio_too_large": "That recording is too long. Try a shorter one.",
+      "save_failed": "The AI replied, but the message wasn't saved. Try again.",
+      "unknown": "Something went wrong. Try again."
     }
   },
   "expenses": {
@@ -274,10 +341,32 @@
     }
   },
   "log": {
-    "placeholder": {
-      "step1": "Log table with source (text or audio), model, tokens and cost",
-      "step2": "List by date showing what the AI called on each message",
-      "step3": "Usage totals per period"
+    "page": {
+      "loadFailed": "We couldn't load the log.",
+      "retry": "Try again",
+      "loadMore": "Load more"
+    },
+    "totals": {
+      "cost": "Cost in period",
+      "messages": "Messages",
+      "tokensIn": "Input tokens",
+      "tokensOut": "Output tokens"
+    },
+    "entry": {
+      "fromUser": "Your message",
+      "fromAssistant": "AI reply",
+      "audio": "Audio",
+      "cleared": "Cleared from chat",
+      "tokens": "{{input}} in · {{output}} out",
+      "cached": "({{value}} cached)",
+      "tools_one": "{{count}} tool",
+      "tools_other": "{{count}} tools",
+      "toolOk": "OK",
+      "toolFailed": "Failed"
+    },
+    "empty": {
+      "title": "Nothing in this period",
+      "description": "The log is filled in by the Chat: every message you send shows up here with what the AI did and what it cost."
     }
   },
   "common": {
@@ -285,7 +374,8 @@
     "cancel": "Cancel",
     "discard": "Discard",
     "change": "Change",
-    "processing": "Working…"
+    "processing": "Working…",
+    "loading": "Loading…"
   },
   "auth": {
     "fields": {

@@ -92,17 +92,84 @@
     "ptBR": "Português (Brasil)",
     "en": "English"
   },
-  "placeholder": {
-    "title": "Módulo ainda não implementado",
-    "description": "A estrutura desta tela já existe: página, pasta de componentes, camada de dados (supabase.ts). O conteúdo entra quando o módulo for detalhado.",
-    "nextSteps": "Próximos passos"
-  },
   "chat": {
-    "placeholder": {
-      "step1": "Tabelas de conversa e de log da IA",
-      "step2": "Edge Function de chat com as ferramentas de gasto, receita e categoria",
-      "step3": "Bolhas, gravador de áudio e transcrição",
-      "step4": "Cartão de confirmação de registro salvo"
+    "typing": "A IA está respondendo",
+    "loadPrevious": "Carregar mensagens anteriores",
+    "day": {
+      "today": "Hoje",
+      "yesterday": "Ontem"
+    },
+    "message": {
+      "transcribing": "Transcrevendo o áudio…",
+      "fromAudio": "Mensagem enviada por áudio"
+    },
+    "composer": {
+      "placeholder": "Gastei 20 no posto…",
+      "label": "Escreva sua mensagem",
+      "send": "Enviar mensagem",
+      "record": "Gravar um áudio",
+      "sendRecording": "Enviar o áudio",
+      "cancelRecording": "Descartar a gravação",
+      "pauseRecording": "Pausar a gravação",
+      "resumeRecording": "Continuar gravando",
+      "playback": "Ouvir o que foi gravado"
+    },
+    "recording": {
+      "permission_denied": "Não consegui acessar o microfone. Libere a permissão no navegador e tente de novo.",
+      "unsupported": "Este navegador não grava áudio. Escreva a mensagem por aqui."
+    },
+    "welcome": {
+      "title": "Fale, que eu anoto",
+      "description": "Registre e consulte seus gastos e receitas conversando — por texto ou por áudio. Eu escolho a categoria e mostro o que salvei.",
+      "examples": {
+        "expense": "Gastei 20 no posto de gasolina",
+        "dollar": "Paguei 12 dólares na assinatura de ontem",
+        "income": "Caiu meu salário, 4.200",
+        "query": "Quanto gastei com carro esse mês?",
+        "summary": "Onde eu mais gastei nos últimos 30 dias?"
+      }
+    },
+    "clear": {
+      "action": "Limpar conversa",
+      "title": "Limpar a conversa?",
+      "description": "As mensagens somem desta tela, mas os seus gastos, receitas e categorias continuam intactos — limpar a conversa não desfaz nada do que ela registrou. O histórico e o custo seguem no Log da IA.",
+      "confirm": "Limpar",
+      "done": "Conversa limpa."
+    },
+    "receipt": {
+      "gasto": {
+        "criado": "Gasto salvo",
+        "editado": "Gasto alterado",
+        "excluido": "Gasto excluído",
+        "desativado": "Gasto desativado"
+      },
+      "receita": {
+        "criado": "Receita salva",
+        "editado": "Receita alterada",
+        "excluido": "Receita excluída",
+        "desativado": "Receita desativada"
+      },
+      "categoria": {
+        "criado": "Categoria criada",
+        "editado": "Categoria alterada",
+        "excluido": "Categoria excluída",
+        "desativado": "Categoria desativada"
+      },
+      "converted": "{{original}} · cotação {{rate}}",
+      "noCategory": "Sem categoria",
+      "newCategory": "nova",
+      "occurredAt": "Ocorreu em",
+      "receivedAt": "Recebido em",
+      "createdAt": "Registrado em"
+    },
+    "errors": {
+      "ai_not_configured": "A IA ainda não está configurada neste sistema.",
+      "ai_rate_limited": "A IA está sobrecarregada agora. Tente de novo em alguns instantes.",
+      "ai_failed": "A IA não conseguiu responder. Tente de novo.",
+      "transcription_failed": "Não consegui transcrever o áudio. Tente gravar de novo ou escreva a mensagem.",
+      "audio_too_large": "O áudio ficou grande demais. Grave um recado mais curto.",
+      "save_failed": "A IA respondeu, mas a mensagem não foi salva. Tente de novo.",
+      "unknown": "Algo deu errado. Tente de novo."
     }
   },
   "expenses": {
@@ -274,10 +341,32 @@
     }
   },
   "log": {
-    "placeholder": {
-      "step1": "Tabela de log com origem (texto ou áudio), modelo, tokens e custo",
-      "step2": "Lista por data com o que a IA chamou em cada mensagem",
-      "step3": "Totais de consumo por período"
+    "page": {
+      "loadFailed": "Não conseguimos carregar o log.",
+      "retry": "Tentar de novo",
+      "loadMore": "Carregar mais"
+    },
+    "totals": {
+      "cost": "Custo no período",
+      "messages": "Mensagens",
+      "tokensIn": "Tokens de entrada",
+      "tokensOut": "Tokens de saída"
+    },
+    "entry": {
+      "fromUser": "Mensagem sua",
+      "fromAssistant": "Resposta da IA",
+      "audio": "Áudio",
+      "cleared": "Fora da conversa",
+      "tokens": "{{input}} entrada · {{output}} saída",
+      "cached": "({{value}} em cache)",
+      "tools_one": "{{count}} ferramenta",
+      "tools_other": "{{count}} ferramentas",
+      "toolOk": "OK",
+      "toolFailed": "Falhou"
+    },
+    "empty": {
+      "title": "Nada neste período",
+      "description": "O log é preenchido pelo Chat: cada mensagem que você manda aparece aqui com o que a IA fez e quanto custou."
     }
   },
   "common": {
@@ -285,7 +374,8 @@
     "cancel": "Cancelar",
     "discard": "Descartar",
     "change": "Alterar",
-    "processing": "Processando…"
+    "processing": "Processando…",
+    "loading": "Carregando…"
   },
   "auth": {
     "fields": {

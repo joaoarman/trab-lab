@@ -139,6 +139,12 @@
   /* Estados */
   --destructive: 0 72% 45%;
   --destructive-foreground: 0 0% 100%;
+  /* O fundo suave do perigo — o par de --destructive, como --expense-muted é o
+     par de --expense. Entrou com a bolha de RECUSA do Chat ("este assunto não é
+     do sistema"), que precisa ser vermelha e legível ao mesmo tempo: sobre
+     --destructive cheio, um parágrafo inteiro em branco vira um bloco que grita.
+     A cor do TEXTO nesse fundo é --destructive, não --destructive-foreground. */
+  --destructive-muted: 0 80% 96%;
 
   /* ATENÇÃO — âmbar. O aviso de "alterações não salvas" na tela de conta, e o
      que vier depois com o mesmo papel: "isto ainda não está gravado", "isto
@@ -207,6 +213,9 @@
   /* Estados */
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
+  /* Ver a nota em :root. Escurece no tema escuro pelo mesmo motivo de
+     --expense-muted: um vermelho claro sobre grafite vira mancha. */
+  --destructive-muted: 0 35% 18%;
 
   /* Atenção — ver a nota em :root. Sobe de luminosidade e o fundo suave escurece,
      senão o aviso vira uma mancha clara demais sobre o grafite. */

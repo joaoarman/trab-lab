@@ -126,3 +126,34 @@ export function paraCampoDeDataHora(data: Date): string {
     `T${doisDigitos(data.getHours())}:${doisDigitos(data.getMinutes())}`
   )
 }
+
+// --- O dia de um instante --------------------------------------------------
+//
+// As duas funções abaixo respondem à mesma pergunta que os atalhos respondem, mas
+// para um instante solto: "de que DIA é isto, no fuso de quem está olhando?".
+//
+// Quem precisa: o separador de datas do Chat ("Hoje", "Ontem", "31/07/2026") e o
+// que a tela manda para a IA como data de hoje — é ela que resolve "ontem" e
+// "sexta passada" no prompt, e o servidor não pode resolvê-la sozinho porque roda
+// em UTC (viraria o dia às 21h de Brasília).
+
+/**
+ * O dia de um instante em `YYYY-MM-DD`, **no fuso local**.
+ *
+ * `toISOString().slice(0, 10)` não serve: ele converte para UTC, e uma mensagem
+ * das 22h em Brasília apareceria sob o cabeçalho do dia seguinte.
+ */
+export function dataLocal(valor: Date | string = new Date()): string {
+  return paraData(valor instanceof Date ? valor : new Date(valor))
+}
+
+/**
+ * A data `dias` adiante (ou atrás, com número negativo).
+ *
+ * `new Date(ano, mes - 1, dia + n)` normaliza o estouro sozinho: o dia 0 de
+ * setembro vira 31 de agosto, e a virada de ano se resolve sem `if`.
+ */
+export function deslocarData(data: string, dias: number): string {
+  const [ano, mes, dia] = data.split('-').map(Number)
+  return paraData(new Date(ano, mes - 1, dia + dias))
+}
