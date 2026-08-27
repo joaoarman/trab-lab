@@ -5,6 +5,12 @@ import {
   FolderTree,
   ScrollText,
   UserRound,
+  Landmark,
+  Users,
+  CalendarDays,
+  Dumbbell,
+  UtensilsCrossed,
+  ListChecks,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -85,6 +91,43 @@ export const NAV_ITEMS: NavItem[] = [
     icon: ScrollText,
     bottomNav: false,
   },
+]
+
+/**
+ * Um módulo que **ainda não existe**: aparece na sidebar, rotulado "em breve", e
+ * não é clicável.
+ *
+ * Não é um `NavItem` de propósito — não tem `to`. Um item de navegação sem rota
+ * é uma contradição, e dar a ele uma rota falsa (`#`, `/em-breve`) colocaria no
+ * roteador uma tela que ninguém escreveu: o clique levaria a lugar nenhum e o
+ * usuário teria que usar o "voltar" para desfazer um caminho que o produto
+ * prometeu e não cumpre. Aqui o item é **apenas um rótulo com ícone**, e a
+ * ausência de `to` é o que garante, no tipo, que ele nunca vire link.
+ *
+ * O que ele comunica é o desenho do Self OS: o financeiro é o primeiro módulo de
+ * um sistema operacional da vida pessoal, não o produto inteiro. Sem esta lista,
+ * quem abre o app pela primeira vez lê "Self OS" e vê um app de gastos.
+ */
+export interface ModuloFuturo {
+  /** Chave i18n do rótulo curto. */
+  labelKey: string
+  icon: LucideIcon
+}
+
+/**
+ * Os próximos módulos, na ordem em que aparecem no pé da sidebar.
+ *
+ * Ficam **só na sidebar**: a barra inferior do celular divide a largura do
+ * aparelho entre as abas, e gastar uma delas com algo que não abre encolheria as
+ * que se usam todo dia — o mesmo critério que já deixa o Log da IA fora dela.
+ */
+export const MODULOS_FUTUROS: ModuloFuturo[] = [
+  { labelKey: 'nav.openFinance', icon: Landmark },
+  { labelKey: 'nav.family', icon: Users },
+  { labelKey: 'nav.agenda', icon: CalendarDays },
+  { labelKey: 'nav.workouts', icon: Dumbbell },
+  { labelKey: 'nav.meals', icon: UtensilsCrossed },
+  { labelKey: 'nav.tasks', icon: ListChecks },
 ]
 
 /** Os itens que ocupam uma aba na barra inferior do celular. */

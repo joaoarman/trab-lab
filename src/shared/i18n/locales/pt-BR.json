@@ -16,7 +16,15 @@
     "categories": "Categorias",
     "categoriesSubtitle": "Sua hierarquia de categorias e subcategorias",
     "log": "Log da IA",
-    "logSubtitle": "Chamadas, tokens e custo de cada mensagem"
+    "logSubtitle": "Chamadas, tokens e custo de cada mensagem",
+    "upcoming": "Ideias futuras",
+    "comingSoon": "Ideia futura",
+    "openFinance": "Open Finance",
+    "family": "Família",
+    "agenda": "Agenda",
+    "workouts": "Treinos",
+    "meals": "Alimentação",
+    "tasks": "Tarefas"
   },
   "account": {
     "menu": {

@@ -16,7 +16,15 @@
     "categories": "Categories",
     "categoriesSubtitle": "Your category and subcategory hierarchy",
     "log": "AI log",
-    "logSubtitle": "Calls, tokens and cost of every message"
+    "logSubtitle": "Calls, tokens and cost of every message",
+    "upcoming": "Future ideas",
+    "comingSoon": "Future idea",
+    "openFinance": "Open Finance",
+    "family": "Family",
+    "agenda": "Calendar",
+    "workouts": "Workouts",
+    "meals": "Meals",
+    "tasks": "Tasks"
   },
   "account": {
     "menu": {

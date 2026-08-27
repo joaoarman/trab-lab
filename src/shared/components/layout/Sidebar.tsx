@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { X } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/components/ui/button'
+import { Badge } from '@/shared/components/ui/badge'
 import { Brand } from './Brand'
 import { UserMenu } from './UserMenu'
-import { NAV_ITEMS, type NavItem } from './navigation'
+import { NAV_ITEMS, MODULOS_FUTUROS, type NavItem, type ModuloFuturo } from './navigation'
 
 /**
  * A navegação lateral. **Um componente, dois papéis** — de propósito:
@@ -44,16 +45,70 @@ function ModuleLink({ item, onNavegar }: { item: NavItem; onNavegar?: () => void
   )
 }
 
+/**
+ * Um módulo que ainda não abre: o mesmo desenho de linha dos outros, mas em
+ * `<div>` e não em `<NavLink>`.
+ *
+ * Não é um botão desabilitado. Um `<button disabled>` promete uma ação que
+ * existe e está momentaneamente fora do ar — não é o caso: não há para onde ir.
+ * Como não é elemento interativo, ele também **sai da navegação por Tab** sem
+ * precisar de `tabIndex={-1}`, e o leitor de tela lê "Agenda, em breve" como um
+ * texto, não como um controle quebrado.
+ *
+ * O rótulo fica em `text-muted-foreground/70`: um degrau abaixo do resto da
+ * lista, para que a diferença entre "o que abre" e "o que ainda não abre" seja
+ * visível antes de se ler a badge.
+ */
+function ModuloFuturoLink({ item }: { item: ModuloFuturo }) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="flex cursor-not-allowed select-none items-center gap-3 rounded-md px-3 py-3 text-sm font-medium text-muted-foreground/70">
+      <item.icon className="size-5 shrink-0" aria-hidden />
+      <span className="truncate">{t(item.labelKey)}</span>
+      {/* Sem `uppercase`/`tracking` aqui, ao contrário do título do grupo: o
+          rótulo ficou longo, e caixa alta com espaçamento roubaria da largura
+          que sobra para o nome do módulo — numa coluna de 16rem é a diferença
+          entre ler "Alimentação" e ler "Alimentaç…". */}
+      <Badge
+        variant="secondary"
+        className="ml-auto shrink-0 px-1.5 py-0 text-[0.625rem] font-semibold"
+      >
+        {t('nav.comingSoon')}
+      </Badge>
+    </div>
+  )
+}
+
 /** O miolo da coluna — igual nos dois papéis. */
 function Conteudo({ onNavegar }: { onNavegar?: () => void }) {
   const { t } = useTranslation()
 
   return (
     <>
-      <nav aria-label={t('nav.primaryLabel')} className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {NAV_ITEMS.map((item) => (
-          <ModuleLink key={item.to} item={item} onNavegar={onNavegar} />
-        ))}
+      <nav
+        aria-label={t('nav.primaryLabel')}
+        className="flex flex-1 flex-col overflow-y-auto px-3 py-4"
+      >
+        <div className="space-y-1">
+          {NAV_ITEMS.map((item) => (
+            <ModuleLink key={item.to} item={item} onNavegar={onNavegar} />
+          ))}
+        </div>
+
+        {/* Os próximos módulos ficam colados no PÉ da navegação (`mt-auto`), e
+            não logo abaixo do último item: o que já funciona tem que continuar
+            sendo o bloco que se lê primeiro. Quando a coluna é curta demais para
+            o espaço sobrar, o `mt-auto` simplesmente não empurra nada e a lista
+            rola — nunca cobre o que está acima. */}
+        <div className="mt-auto space-y-1 pt-8">
+          <p className="px-3 pb-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            {t('nav.upcoming')}
+          </p>
+          {MODULOS_FUTUROS.map((item) => (
+            <ModuloFuturoLink key={item.labelKey} item={item} />
+          ))}
+        </div>
       </nav>
 
       {/* O usuário (com tema e idioma dentro) fica no PÉ da coluna: é destino de

@@ -1,0 +1,1 @@
+-- Sem alterações de banco nesta implementação.
